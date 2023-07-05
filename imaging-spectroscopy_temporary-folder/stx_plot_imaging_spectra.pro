@@ -112,27 +112,105 @@ pro stx_plot_imaging_spectra, path_data_folder, path_sci_file, path_bkg_file, $ 
   ind_change_nsources = rem_dup(array_nsources)
   nchanges = n_elements(ind_change_nsources)
   
-  stop
+  ;stop
   ;;;;; Restore the imaging sav files and create the variables
   n_sources = n_tot_sources ;n_max_sources
   all_vis            = []
-  all_clean_maps     = []
+  ;all_clean_maps     = []
   ;total_clean_flux   = []
-  all_mem_maps       = []
+  ;all_mem_maps       = []
   ;total_mem_flux     = []
-  all_fwdfit_maps    = []
-  all_fwdfit_fluxes     = fltarr(n_sources,n_ebins)
-  all_fwdfit_err_fluxes = fltarr(n_sources,n_ebins)
-  all_fwdfit_pos        = fltarr(2,n_sources,n_ebins)
-  all_fwdfit_err_pos    = fltarr(2,n_sources,n_ebins)
+  ;all_fwdfit_maps    = []
   all_energy_ranges     = fltarr(2,n_ebins)
   ind_more_sources = 33
   ;; Distinguish the case of a single source or multiple sources
   if n_sources eq 1 then begin
     
+    all_fwdfit_fluxes     = fltarr(n_ebins)
+    all_fwdfit_err_fluxes = fltarr(n_ebins)
+    all_fwdfit_pos        = fltarr(2,n_ebins)
+    all_fwdfit_err_pos    = fltarr(2,n_ebins)
+    
+    ;; Loop on all energies
+    for this_en=0,n_ebins-1 do begin
+      
+      restore,all_path_sav_stix[this_en],/ver
+      all_vis                      = [all_vis, vis]
+      all_energy_ranges[*,this_en] = this_energy_range
+      
+      all_fwdfit_fluxes[this_en]     = out_param_fwdfit.srcflux
+      all_fwdfit_err_fluxes[this_en] = out_sigma_fwdfit.srcflux
+      all_fwdfit_pos[*,this_en]      = [out_param_fwdfit.srcx, out_param_fwdfit.srcy]
+      all_fwdfit_err_pos[*,this_en]  = [out_sigma_fwdfit.srcx, out_sigma_fwdfit.srcy]
+      
+    endfor
+    
+    
+    ;;;;; Scale the fluxes at 1 AU
+    all_fwdfit_fluxes_so = all_fwdfit_fluxes
+    all_fwdfit_err_fluxes_so = all_fwdfit_err_fluxes
+    total_flux_fwdfit = all_fwdfit_fluxes * distance^2
+    total_flux_fwdfit_err = all_fwdfit_err_fluxes * distance^2
+    
+
+    ;;;;; Define the fwdfit axes for the plot
+    e_axis_fwdfit_plot = [all_energy_ranges[0,0],mean(all_energy_ranges,dim=1),all_energy_ranges[1,-1]]
+    e_axis_fwdfit = mean(all_energy_ranges,dim=1)
+    total_flux_fwdfit_plot = [total_flux_fwdfit[0],total_flux_fwdfit,total_flux_fwdfit[-1]]
+    
+    
+  endif else if (n_sources gt 1 and n_elements(ind_change_nsources) eq 1) then begin
+    
+    all_fwdfit_fluxes     = fltarr(2,n_ebins)
+    all_fwdfit_err_fluxes = fltarr(2,n_ebins)
+    all_fwdfit_pos        = fltarr(2,n_sources,n_ebins)
+    all_fwdfit_err_pos    = fltarr(2,n_sources,n_ebins)
+
+    ;; Loop on all energies
+    for this_en=0,n_ebins-1 do begin
+
+      restore,all_path_sav_stix[this_en],/ver
+      all_vis                      = [all_vis, vis]
+      all_energy_ranges[*,this_en] = this_energy_range
+      
+      ;; Loop on all sources
+      for this_s=0,n_fwdfit_sources-1 do begin
+        
+        all_fwdfit_fluxes[this_s,this_en]     = out_param_fwdfit[this_s].srcflux
+        all_fwdfit_err_fluxes[this_s,this_en] = out_sigma_fwdfit[this_s].srcflux
+        all_fwdfit_pos[*,this_s,this_en]      = [out_param_fwdfit[this_s].srcx, out_param_fwdfit[this_s].srcy]
+        all_fwdfit_err_pos[*,this_s,this_en]  = [out_sigma_fwdfit[this_s].srcx, out_sigma_fwdfit[this_s].srcy]
+        
+      endfor
+
+    endfor
+    
+    
+    ;;;;; Scale the fluxes at 1 AU
+    all_fwdfit_fluxes_so = all_fwdfit_fluxes
+    all_fwdfit_err_fluxes_so = all_fwdfit_err_fluxes
+    all_fwdfit_fluxes *= distance^2
+    all_fwdfit_err_fluxes *= distance^2
+
+
+    ;;;;; Calculate the total flux and the related error
+    total_flux_fwdfit = total(all_fwdfit_fluxes,1)
+    total_flux_fwdfit_err = sqrt(total(all_fwdfit_err_fluxes^2,1))
+
+
+    ;;;;; Define the fwdfit axes for the plot
+    e_axis_fwdfit_plot = [all_energy_ranges[0,0],mean(all_energy_ranges,dim=1),all_energy_ranges[1,-1]]
+    e_axis_fwdfit = mean(all_energy_ranges,dim=1)
+    total_flux_fwdfit_plot = [total_flux_fwdfit[0],total_flux_fwdfit,total_flux_fwdfit[-1]]
     
     
   endif else begin
+    
+    
+    all_fwdfit_fluxes     = fltarr(n_sources,n_ebins)
+    all_fwdfit_err_fluxes = fltarr(n_sources,n_ebins)
+    all_fwdfit_pos        = fltarr(2,n_sources,n_ebins)
+    all_fwdfit_err_pos    = fltarr(2,n_sources,n_ebins)
     
     for this_en=0,ind_change_nsources[-1]-1 do begin
       restore,all_path_sav_stix[this_en],/ver
@@ -187,6 +265,23 @@ pro stx_plot_imaging_spectra, path_data_folder, path_sci_file, path_bkg_file, $ 
       all_energy_ranges[*,this_en] = this_energy_range
     endfor
     
+    ;;;;; Scale the fluxes at 1 AU
+    all_fwdfit_fluxes_so = all_fwdfit_fluxes
+    all_fwdfit_err_fluxes_so = all_fwdfit_err_fluxes
+    all_fwdfit_fluxes *= distance^2
+    all_fwdfit_err_fluxes *= distance^2
+
+
+    ;;;;; Calculate the total flux and the related error
+    total_flux_fwdfit = total(all_fwdfit_fluxes,1)
+    total_flux_fwdfit_err = sqrt(total(all_fwdfit_err_fluxes^2,1))
+
+
+    ;;;;; Define the fwdfit axes for the plot
+    e_axis_fwdfit_plot = [all_energy_ranges[0,0],mean(all_energy_ranges,dim=1),all_energy_ranges[1,-1]]
+    e_axis_fwdfit = mean(all_energy_ranges,dim=1)
+    total_flux_fwdfit_plot = [total_flux_fwdfit[0],total_flux_fwdfit,total_flux_fwdfit[-1]]
+    
   endelse
   
     
@@ -196,24 +291,6 @@ pro stx_plot_imaging_spectra, path_data_folder, path_sci_file, path_bkg_file, $ 
   ;IDL> help, all_fwdfit_pos
   ;ALL_FWDFIT_POS  FLOAT     = Array[2, 2, 3]  
   ;                          = [x and y, number of sources, number of energy bins]
-  
-  
-  ;;;;; Scale the fluxes at 1 AU
-  all_fwdfit_fluxes_so = all_fwdfit_fluxes
-  all_fwdfit_err_fluxes_so = all_fwdfit_err_fluxes
-  all_fwdfit_fluxes *= distance^2
-  all_fwdfit_err_fluxes *= distance^2
-  
-  
-  ;;;;; Calculate the total flux and the related error
-  total_flux_fwdfit = total(all_fwdfit_fluxes,1)
-  total_flux_fwdfit_err = sqrt(total(all_fwdfit_err_fluxes^2,1))
-  
-  
-  ;;;;; Define the fwdfit axes for the plot
-  e_axis_fwdfit_plot = [all_energy_ranges[0,0],mean(all_energy_ranges,dim=1),all_energy_ranges[1,-1]]
-  e_axis_fwdfit = mean(all_energy_ranges,dim=1)
-  total_flux_fwdfit_plot = [all_fwdfit_fluxes[0,0],total(all_fwdfit_fluxes,1),all_fwdfit_fluxes[0,-1]]
   
   
   ;;;;; For the time_shift, check the convention used for imaging.

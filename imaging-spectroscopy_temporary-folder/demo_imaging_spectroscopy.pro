@@ -28,7 +28,7 @@ this_time_range_so = ['30-Sep-2022 16:15:35', '30-Sep-2022 16:16:59']
 
 ;;;;; Energy range
 ;; By setting this, the script will loop all native energy bins within the specified range
-energy_range = [9, 32] ; [8, 32]
+energy_range = [9, 32]
 ;; By setting this, you can bin in energy
 ;energy_low = [32,40,50]
 ;energy_high = [40,50,70]
