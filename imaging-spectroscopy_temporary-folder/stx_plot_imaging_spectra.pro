@@ -112,7 +112,7 @@ pro stx_plot_imaging_spectra, path_data_folder, path_sci_file, path_bkg_file, $ 
   ind_change_nsources = rem_dup(array_nsources)
   nchanges = n_elements(ind_change_nsources)
   
-  
+  stop
   ;;;;; Restore the imaging sav files and create the variables
   n_sources = n_tot_sources ;n_max_sources
   all_vis            = []
@@ -127,58 +127,68 @@ pro stx_plot_imaging_spectra, path_data_folder, path_sci_file, path_bkg_file, $ 
   all_fwdfit_err_pos    = fltarr(2,n_sources,n_ebins)
   all_energy_ranges     = fltarr(2,n_ebins)
   ind_more_sources = 33
-  for this_en=0,ind_change_nsources[-1]-1 do begin
-    restore,all_path_sav_stix[this_en],/ver
-    all_vis            = [all_vis, vis]
-    ;all_clean_maps     = [all_clean_maps, clean_map[0]]
-    ;;;total_clean_flux   = [total_clean_flux, flux_clean]
-    ;all_mem_maps       = [all_mem_maps, memge_map]
-    ;;;total_mem_flux     = [total_mem_flux, flux_mem]
-    ;all_fwdfit_maps    = [all_fwdfit_maps, fwdfit_map]
-    ;all_fwdfit_fluxes[*,this_en] = out_param_fwdfit.srcflux
-    ;all_fwdfit_err_fluxes[*,this_en] = out_sigma_fwdfit.srcflux
-    if n_fwdfit_sources gt 1 then ind_more_sources = min([ind_more_sources, this_en])
-    for this_s=0,n_fwdfit_sources-1 do begin
-      ;stop
-      if this_s+1 le n_fwdfit_sources then begin
-        if n_fwdfit_sources gt 1 then begin
-          all_fwdfit_fluxes[this_s,this_en] = out_param_fwdfit[this_s].srcflux
-          all_fwdfit_err_fluxes[this_s,this_en] = out_sigma_fwdfit[this_s].srcflux
-          all_fwdfit_pos[*,this_s,this_en] = [out_param_fwdfit[this_s].srcx, out_param_fwdfit[this_s].srcy]
-          all_fwdfit_err_pos[*,this_s,this_en] = [out_sigma_fwdfit[this_s].srcx, out_sigma_fwdfit[this_s].srcy]
+  ;; Distinguish the case of a single source or multiple sources
+  if n_sources eq 1 then begin
+    
+    
+    
+  endif else begin
+    
+    for this_en=0,ind_change_nsources[-1]-1 do begin
+      restore,all_path_sav_stix[this_en],/ver
+      all_vis            = [all_vis, vis]
+      ;all_clean_maps     = [all_clean_maps, clean_map[0]]
+      ;;;total_clean_flux   = [total_clean_flux, flux_clean]
+      ;all_mem_maps       = [all_mem_maps, memge_map]
+      ;;;total_mem_flux     = [total_mem_flux, flux_mem]
+      ;all_fwdfit_maps    = [all_fwdfit_maps, fwdfit_map]
+      ;all_fwdfit_fluxes[*,this_en] = out_param_fwdfit.srcflux
+      ;all_fwdfit_err_fluxes[*,this_en] = out_sigma_fwdfit.srcflux
+      if n_fwdfit_sources gt 1 then ind_more_sources = min([ind_more_sources, this_en])
+      for this_s=0,n_fwdfit_sources-1 do begin
+        ;stop
+        if this_s+1 le n_fwdfit_sources then begin
+          if n_fwdfit_sources gt 1 then begin
+            all_fwdfit_fluxes[this_s,this_en] = out_param_fwdfit[this_s].srcflux
+            all_fwdfit_err_fluxes[this_s,this_en] = out_sigma_fwdfit[this_s].srcflux
+            all_fwdfit_pos[*,this_s,this_en] = [out_param_fwdfit[this_s].srcx, out_param_fwdfit[this_s].srcy]
+            all_fwdfit_err_pos[*,this_s,this_en] = [out_sigma_fwdfit[this_s].srcx, out_sigma_fwdfit[this_s].srcy]
+          endif else begin
+            all_fwdfit_fluxes[this_s,this_en] = out_param_fwdfit.srcflux
+            all_fwdfit_err_fluxes[this_s,this_en] = out_sigma_fwdfit.srcflux
+            all_fwdfit_pos[*,this_s,this_en] = [out_param_fwdfit.srcx, out_param_fwdfit.srcy]
+            all_fwdfit_err_pos[*,this_s,this_en] = [out_sigma_fwdfit.srcx, out_sigma_fwdfit.srcy]
+          endelse
         endif else begin
           all_fwdfit_fluxes[this_s,this_en] = out_param_fwdfit.srcflux
           all_fwdfit_err_fluxes[this_s,this_en] = out_sigma_fwdfit.srcflux
-          all_fwdfit_pos[*,this_s,this_en] = [out_param_fwdfit.srcx, out_param_fwdfit.srcy]
-          all_fwdfit_err_pos[*,this_s,this_en] = [out_sigma_fwdfit.srcx, out_sigma_fwdfit.srcy]
+          all_fwdfit_pos[*,this_s,this_en] = [0.,0.]
+          all_fwdfit_err_pos[*,this_s,this_en] = [0., 0.]
         endelse
-      endif else begin
-        all_fwdfit_fluxes[this_s,this_en] = out_param_fwdfit.srcflux
-        all_fwdfit_err_fluxes[this_s,this_en] = out_sigma_fwdfit.srcflux
-        all_fwdfit_pos[*,this_s,this_en] = [0.,0.]
-        all_fwdfit_err_pos[*,this_s,this_en] = [0., 0.]
-      endelse
+      endfor
+      all_energy_ranges[*,this_en] = this_energy_range
     endfor
-    all_energy_ranges[*,this_en] = this_energy_range
-  endfor
+
+    add_this = array_nsources[ind_change_nsources[-1]-1]    ; at the point the number of sources increase, then this increases too
+    for this_en=ind_change_nsources[-1],n_ebins-1 do begin
+      restore,all_path_sav_stix[this_en];,/ver
+      all_vis            = [all_vis, vis]
+      ;all_clean_maps     = [all_clean_maps, clean_map[0]]
+      ;;;total_clean_flux   = [total_clean_flux, flux_clean]
+      ;all_mem_maps       = [all_mem_maps, memge_map]
+      ;;;total_mem_flux     = [total_mem_flux, flux_mem]
+      ;all_fwdfit_maps    = [all_fwdfit_maps, fwdfit_map]
+      for this_s=add_this,n_fwdfit_sources+add_this-1 do begin
+        all_fwdfit_fluxes[this_s,this_en] = out_param_fwdfit[this_s-add_this].srcflux
+        all_fwdfit_err_fluxes[this_s,this_en] = out_sigma_fwdfit[this_s-add_this].srcflux
+        all_fwdfit_pos[*,this_s,this_en] = [out_param_fwdfit[this_s-add_this].srcx, out_param_fwdfit[this_s-add_this].srcy]
+        all_fwdfit_err_pos[*,this_s,this_en] = [out_sigma_fwdfit[this_s-add_this].srcx, out_sigma_fwdfit[this_s-add_this].srcy]
+      endfor
+      all_energy_ranges[*,this_en] = this_energy_range
+    endfor
+    
+  endelse
   
-  add_this = array_nsources[ind_change_nsources[-1]-1]    ; at the point the number of sources increase, then this increases too
-  for this_en=ind_change_nsources[-1],n_ebins-1 do begin
-    restore,all_path_sav_stix[this_en];,/ver
-    all_vis            = [all_vis, vis]
-    ;all_clean_maps     = [all_clean_maps, clean_map[0]]
-    ;;;total_clean_flux   = [total_clean_flux, flux_clean]
-    ;all_mem_maps       = [all_mem_maps, memge_map]
-    ;;;total_mem_flux     = [total_mem_flux, flux_mem]
-    ;all_fwdfit_maps    = [all_fwdfit_maps, fwdfit_map]
-    for this_s=add_this,n_fwdfit_sources+add_this-1 do begin
-      all_fwdfit_fluxes[this_s,this_en] = out_param_fwdfit[this_s-add_this].srcflux
-      all_fwdfit_err_fluxes[this_s,this_en] = out_sigma_fwdfit[this_s-add_this].srcflux
-      all_fwdfit_pos[*,this_s,this_en] = [out_param_fwdfit[this_s-add_this].srcx, out_param_fwdfit[this_s-add_this].srcy]
-      all_fwdfit_err_pos[*,this_s,this_en] = [out_sigma_fwdfit[this_s-add_this].srcx, out_sigma_fwdfit[this_s-add_this].srcy]
-    endfor
-    all_energy_ranges[*,this_en] = this_energy_range
-  endfor
     
   ;IDL> help, all_fwdfit_fluxes
   ;FLOAT     = Array[2, 3]                     
