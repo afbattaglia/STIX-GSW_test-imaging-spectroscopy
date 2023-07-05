@@ -17,9 +17,10 @@ path_sav_folder = '/home/afbattaglia/Software/idl_lib/STIX-GSW_test-imaging-spec
 ;; It only works by giving the ABSOLUTE PATH!!!
 ;; You can find the data in the following folder:
 ;;          imaging-spectroscopy_temporary-folder/data4demo/
-this_path_sci_file = '/home/afbattaglia/Software/idl_lib/STIX-GSW_test-imaging-spectroscopy/STIX-GSW_test-imaging-spectroscopy/imaging-spectroscopy_temporary-folder/data4demo/cpd_4s/solo_L1_stix-sci-xray-cpd_20220930T160153-20220930T162949_V01_2209303250-64438.fits'
-this_path_bkg_file = '/home/afbattaglia/Software/idl_lib/STIX-GSW_test-imaging-spectroscopy/STIX-GSW_test-imaging-spectroscopy/imaging-spectroscopy_temporary-folder/data4demo/bkg/solo_L1_stix-sci-xray-cpd_20221002T092421-20221002T101741_V01_2210022580-50759.fits'
-this_aux_fits_file = '/home/afbattaglia/Software/idl_lib/STIX-GSW_test-imaging-spectroscopy/STIX-GSW_test-imaging-spectroscopy/imaging-spectroscopy_temporary-folder/data4demo/aux/solo_L2_stix-aux-ephemeris_20220930_V01.fits'
+path_folder_data = '/home/afbattaglia/Software/idl_lib/STIX-GSW_test-imaging-spectroscopy/STIX-GSW_test-imaging-spectroscopy/imaging-spectroscopy_temporary-folder/data4demo/'
+this_path_sci_file = path_folder_data + 'cpd_4s/solo_L1_stix-sci-xray-cpd_20220930T160153-20220930T162949_V01_2209303250-64438.fits'
+this_path_bkg_file = path_folder_data + 'bkg/solo_L1_stix-sci-xray-cpd_20221002T092421-20221002T101741_V01_2210022580-50759.fits'
+this_aux_fits_file = path_folder_data + 'aux/solo_L2_stix-aux-ephemeris_20220930_V01.fits'
 
 ;;;;; Time range
 ; It can be given in Solar Orbiter UT or Earth UT

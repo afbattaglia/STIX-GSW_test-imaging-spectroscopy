@@ -7,7 +7,7 @@ FUNCTION stx_vis_converter, energymin, energymax, u, v, realvis, imvis, err, tim
   ;live_time
   vis.energy_range  = [energymin, energymax]
   vis.time_range    = time_interval
-  vis.obsvis        = COMPLEX(realvis,imvis)
+  vis.obsvis  = COMPLEX(realvis,imvis)
   ;tot_counts
   ;tot_counts_bkg
   ;totflux

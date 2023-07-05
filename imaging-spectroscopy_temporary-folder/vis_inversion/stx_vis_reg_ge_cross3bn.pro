@@ -88,7 +88,7 @@ pro stx_vis_reg_ge_cross3bn,eebrem,nph,nee,eps,ee,drm,visfit,visfitel,Z,dist_sol
   counts=eps
   Ker=dblarr(max(nee),nph)
 
-  R = dist_solo_sun  ; distance in cm
+  R = dist_solo_sun  ; 1.496e+13 ; 1AU distance in cm
   R2pi4=4.*!PI*R^2
 
   for iq=0,nph-1 do begin

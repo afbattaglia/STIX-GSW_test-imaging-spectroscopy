@@ -29,7 +29,8 @@
 ;   vis:           array of STIX count visibility structures (counts cm^-2 s^-1 keV^-1).
 ;                  Each element of the array must be a STIX visibility structure corresponding to a specific energy range              
 ;   dist_solo_sun: SolO - Sun distance 
-;
+;   
+; KEYWORDS:
 ;   attenuator = 0 - no attenuator, 1 - include the attenuator
 ;   
 ; OUTPUTS
@@ -39,7 +40,7 @@
 ;
 ;+
 
-pro stx_visibilities_inversion, vis, dist_solo_sun, attenuator, $
+pro stx_visibilities_inversion, vis, dist_solo_sun, attenuator, confidencestrip = confidencestrip, $
                                 reg_el_vis, orig_ph_vis, reg_ph_vis
                                 
                                 
@@ -63,6 +64,10 @@ pro stx_visibilities_inversion, vis, dist_solo_sun, attenuator, $
   
   deltaeps = ct_edges_upper1 - ct_edges_lower1
   neps     = n_elements(ct_edges_lower1)  
+  
+  if ((ct_edges_upper1[0]+ct_edges_lower1[0])/2 lt 9) then begin
+    message, 'Check for low energy values: Please the first energy bin must be higher than 9 keV'
+  endif
 
   ;;;;;;;; Build count visibility spectra
   stx_build_count_vis_spectra, detOK, vis, count_vis_spectra
@@ -70,11 +75,9 @@ pro stx_visibilities_inversion, vis, dist_solo_sun, attenuator, $
   ;;;;;;;; DRM computation for the involved detectors (drm is assumed to be the same for all detectors)
   e_stx_bin = [indgen(13)+4., indgen(3.)*2.+18., indgen(2.)*3.+25., indgen(3.)*4.+32., indgen(2.)*5.+45., indgen(2.)*7.+56., 70., 76., 84., 100., 120., 150.]
   ct_edges2 = [ct_edges, e_stx_bin[min(where(e_stx_bin gt ct_edges[-1]))]]
-;  stx_drm = stx_build_drm(ct_edges2, attenuator=attenuator)
-;  srm = stx_drm.SMATRIX ; smatrix is DRM (counts/keV/photons - Array[32, 32]). 
-
-  stx_drm = stx_build_pixel_drm(  ct_edges2, ph_energy_edges=ct_edges2)
-  srm = stx_drm.SMATRIX
+  stx_drm = stx_build_drm(ct_edges2, attenuator=attenuator)
+  srm = stx_drm.SMATRIX ; smatrix is DRM (counts/keV/photons - Array[32, 32]). 
+  
   ;;;;;;;; Inversion
   Nspectra   = total(detOK, /integer)
   spectraptr = ptrarr(Nspectra)

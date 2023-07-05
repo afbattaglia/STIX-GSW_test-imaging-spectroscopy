@@ -63,8 +63,19 @@ DEFAULT, photon_bin_position,   0.5
   delta_e  = deltaeps
   index_min = min(where(e_stx_bin gt eps[-1]))
   index_max = min(where(e_stx_bin gt eemax))
-  ee_sampl = [ee_sampl, e_stx_bin[index_min:index_max+1]]
-  delta_e = [delta_e, delta_stx[index_min:index_max+1]]
+ 
+  if (index_min eq -1) then begin
+    ee_sampl = eps
+    delta_e = deltaeps
+  endif else begin
+    if (index_max eq -1) then begin
+      ee_sampl = [ee_sampl, e_stx_bin[index_min:-1]]
+      delta_e = [delta_e, delta_stx[index_min:-1]]
+    endif else begin
+      ee_sampl = [ee_sampl, e_stx_bin[index_min:index_max]]
+      delta_e = [delta_e, delta_stx[index_min:index_max]]
+    endelse
+  endelse
   
   ee  = ee_sampl + delta_e*photon_bin_position
   
@@ -76,7 +87,7 @@ DEFAULT, photon_bin_position,   0.5
   reg_el_vis = []
   econt = 0
 
-  for econt =0,n_elements(ee)-2 do begin
+  for econt =0,n_elements(ee)-1 do begin
     
   viscont=0
     

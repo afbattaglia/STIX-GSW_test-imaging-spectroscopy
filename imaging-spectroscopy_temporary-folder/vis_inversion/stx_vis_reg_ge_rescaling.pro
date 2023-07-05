@@ -332,8 +332,18 @@ pro stx_vis_reg_ge_rescaling,photon_energy_low_array, photon_energy_high_array, 
   delta_e  = bin
   index_min = min(where(e_stx_bin gt photon_energy_edges[-1]))
   index_max = min(where(e_stx_bin gt eemax))
-  ee_sampl = [ee_sampl, e_stx_bin[index_min:index_max]]
-  delta_e = [delta_e, delta_stx[index_min:index_max+1]]  
+  if (index_min eq -1) then begin
+    ee_sampl = photon_energy_edges
+    delta_e = bin
+  endif else begin
+    if (index_max eq -1) then begin
+      ee_sampl = [ee_sampl, e_stx_bin[index_min:-1]]
+      delta_e = [delta_e, delta_stx[index_min:-1]]
+    endif else begin
+      ee_sampl = [ee_sampl, e_stx_bin[index_min:index_max-1]]
+      delta_e = [delta_e, delta_stx[index_min:index_max]]      
+    endelse
+  endelse
 
   ee  = ee_sampl + delta_e*photon_bin_position
   nee = n_elements(ee)
@@ -451,9 +461,19 @@ pro stx_vis_reg_ge_rescaling,photon_energy_low_array, photon_energy_high_array, 
   delta_e  = bin
   index_min = min(where(e_stx_bin gt photon_energy_edges[-1]))
   index_max = min(where(e_stx_bin gt eemax))
-  ee_sampl = [ee_sampl, e_stx_bin[index_min:index_max]]
-  delta_e = [delta_e, delta_stx[index_min:index_max+1]]
-  
+  if (index_min eq -1) then begin
+    ee_sampl = photon_energy_edges
+    delta_e = bin
+  endif else begin
+    if (index_max eq -1) then begin
+      ee_sampl = [ee_sampl, e_stx_bin[index_min:-1]]
+      delta_e = [delta_e, delta_stx[index_min:-1]]
+    endif else begin
+      ee_sampl = [ee_sampl, e_stx_bin[index_min:index_max-1]]
+      delta_e = [delta_e, delta_stx[index_min:index_max]]      
+    endelse
+  endelse
+   
   ee  = ee_sampl + delta_e*photon_bin_position
 
   nee = n_elements(ee)
