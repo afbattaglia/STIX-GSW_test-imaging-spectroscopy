@@ -43,18 +43,18 @@
 ;   time_range           : array containing the selected start and the end time 
 ;
 ;   energy_max_inversion : maximum energy to use for the inversion to calculate the regularized
-;                          visibilities. If the keyword "/standard_vis" is set, then this is ignored.
+;                          visibilities. If the keyword "/observed_vis" is set, then this is ignored.
 ;
 ; OPTIONAL OUTPUTS:
 ;   path_new_folder      : string containing the path of the newly created folder where the 
 ;                          results are stored
 ;
 ; OPTIONAL INPUTS AND KEYWORDS:
-;   standard_vis         : if set, then the "standard visibilities" are used. In this case, the
+;   observed_vis         : if set, then the observed visibilities are used. In this case, the
 ;                          energy_max_inversion is ignored.
 ;
 ;   energy_min_inversion : minimum energy to use for the inversion to calculate the regularized
-;                          visibilities. If the keyword "/standard_vis" is set, then this is ignored.
+;                          visibilities. If the keyword "/observed_vis" is set, then this is ignored.
 ;                          Default is 9 keV (we cannot go lower with the regularized visibilities).
 ;
 ;   configuration_fwdfit : array containing the configuration of the forward fitting algorithm
@@ -155,7 +155,7 @@
 
 pro stx_imaging_spectroscopy, path_sci_file, path_bkg_file, aux_fits_file, time_range, energy_max_inversion,$     ; inputs
   ;; --- Optional inputs and keywords
-  standard_vis = standard_vis, $
+  observed_vis = observed_vis, $
   energy_min_inversion = energy_min_inversion, $
   configuration_fwdfit = configuration_fwdfit, $
   source_loc = source_loc, $
@@ -223,10 +223,10 @@ pro stx_imaging_spectroscopy, path_sci_file, path_bkg_file, aux_fits_file, time_
   if (keyword_set(source_loc) or keyword_set(select_location)) and (keyword_set(select_box_location) or keyword_set(box_location)) then begin
     message,'---> It is not possible to define a box (/select_box_location or /box_location) for the locations and at the same time fix them (/select_location or /source_loc). Please, review your keywords.'
   endif
-  if not keyword_set(standard_vis) and energy_max_inversion eq 0 then begin
+  if not keyword_set(observed_vis) and energy_max_inversion eq 0 then begin
     print,''
     print,'By default, regularized visibilities are used. Therefore, energy_max_inversion has to be defined!'
-    message,'---> If you want to use the standard visibilities, then set the keyword /standard_vis'
+    message,'---> If you want to use the standard visibilities, then set the keyword /observed_vis'
   endif
 
   
@@ -316,11 +316,11 @@ pro stx_imaging_spectroscopy, path_sci_file, path_bkg_file, aux_fits_file, time_
   mapcenter_stix = stx_hpc2stx_coord(mapcenter, aux_data)
   xy_flare_stix  = stx_hpc2stx_coord(xy_flare_stix, aux_data)
   
-  ;;;;; Distinguish the case of standard or regularized visibilities
-  if keyword_set(standard_vis) then begin
+  ;;;;; Distinguish the case of observed or regularized visibilities
+  if keyword_set(observed_vis) then begin
 
     ;;;;; String for the type of visibility used
-    vis_type = 'standard visibilities'
+    vis_type = 'observed visibilities'
 
     ;;;;; Define the energy range
     erange_low = e_axis.low
@@ -401,7 +401,7 @@ pro stx_imaging_spectroscopy, path_sci_file, path_bkg_file, aux_fits_file, time_
     
     ;;;;; Distinguish the case of standard or regularized visibilities
     ;; to create the visibility structure
-    if keyword_set(standard_vis) then begin
+    if keyword_set(observed_vis) then begin
 
       ;;;;; Create visibility structure
       vis = stx_construct_calibrated_visibility(path_sci_file, time_range_so, this_energy_range, mapcenter_stix, $
@@ -533,7 +533,7 @@ pro stx_imaging_spectroscopy, path_sci_file, path_bkg_file, aux_fits_file, time_
       ;; If the locations are known a priori, then
       n_fwdfit_sources = n_elements(configuration_fwdfit)
       this_configuration_fwdfit = configuration_fwdfit
-      old_fixedpos = source_loc
+      if keyword_set(source_loc) or keyword_set(select_location) or keyword_set(select_box_location) then old_fixedpos = source_loc
     endelse
     
     
