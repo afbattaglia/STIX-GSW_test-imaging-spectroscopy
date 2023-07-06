@@ -67,7 +67,7 @@ stx_imaging_spectroscopy, $
   energy_max_inversion, $
   ;; --- Optional inputs and keywords
   ;/select_loc, $
-  ;/standard_vis, $
+  ;/observed_vis, $
   path_sav_folder = path_sav_folder, $
   ;/stop_here, $
   /earth_ut, $

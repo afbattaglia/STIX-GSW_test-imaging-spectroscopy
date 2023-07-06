@@ -541,7 +541,7 @@ pro stx_imaging_spectroscopy, path_sci_file, path_bkg_file, aux_fits_file, time_
     if keyword_set(select_location) then begin
       source_loc = fltarr(2,n_fwdfit_sources)
 
-      ;; Ask if the user wants to use the previously selected boxes
+      ;; Ask if the user wants to use the previously selected locations
       use_the_same = 0
       if old_nsources eq n_fwdfit_sources then begin
         print,''
@@ -577,12 +577,12 @@ pro stx_imaging_spectroscopy, path_sci_file, path_bkg_file, aux_fits_file, time_
     if keyword_set(select_box_location) then begin
       box_location = fltarr(2,2,n_fwdfit_sources)   ; [bl or tr, x or y, number of sources]
 
-      ;; Ask if the user wants to use the previously selected locations
+      ;; Ask if the user wants to use the previously selected boxes
       use_the_same_box = 0
       if old_nsources eq n_fwdfit_sources then begin
         print,''
         print,''
-        print,'Previously constrained locations (columns: x and y): '
+        print,'Previously selected boxes (columns: bottom-left and top-right): '
         print, old_boxes
         print,''
         print,'>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'

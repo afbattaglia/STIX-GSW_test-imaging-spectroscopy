@@ -398,6 +398,10 @@ pro stx_plot_imaging_spectra, path_data_folder, path_sci_file, path_bkg_file, $ 
     observed_bk_spectrum = [observed_bk_spectrum, mean(tmp_observed_bk[ile:ihe])]
     observed_bk_spectrum_error = [observed_bk_spectrum_error, mean(tmp_observed_bk_error[ile:ihe])]
   end
+  ;;**********************
+  ;; Test (to be deleted in the official sw!!)
+  ;observed_spectrum += observed_spectrum*0.1
+  ;;**********************
   observed_spectrum_plot = [observed_spectrum[0], observed_spectrum, observed_spectrum[-1]]
   observed_bk_spectrum_plot = [observed_bk_spectrum[0], observed_bk_spectrum, observed_bk_spectrum[-1]]
   e_axis_ospex = (e_min_ospex_axis + e_max_ospex_axis) / 2
