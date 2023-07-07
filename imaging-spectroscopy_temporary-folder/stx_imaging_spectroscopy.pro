@@ -120,8 +120,8 @@
 ;                                      [tr_x, tr_y]]          top-right (arcsec)
 ;                          If one needs to give more boxes, then it has to be of the following format: [2,2,nb_sources]
 ;                          For example:
-;                                     [[[bl_x1, bl_y1],[tr_x1, tr_y1]],          ; bottom-left and top-right(arcsec) box source 1
-;                                      [[bl_x2, bl_y2],[tr_x2, tr_y2]]]          ; bottom-left and top-right(arcsec) box source 2
+;                                     [[[bl_x1, tr_x1],[bl_y1, tr_y1]],          ; bottom-left and top-right(arcsec) box source 1
+;                                      [[bl_x2, tr_x2],[bl_y2, tr_y2]]]          ; bottom-left and top-right(arcsec) box source 2
 ;
 ;   ellipse_shape        : if set, then the sources are elliptical Gaussians, otherwise they are circular.
 ;                          If the keyword select_box_location is set and the user manually fixes the location, 
@@ -607,7 +607,7 @@ pro stx_imaging_spectroscopy, path_sci_file, path_bkg_file, aux_fits_file, time_
 
           box_location[0,*,ss] = [tmp_bl[0], tmp_bl[1]]
           box_location[1,*,ss] = [tmp_tr[0], tmp_tr[1]]
-          ;threshold_fix = 2.
+          threshold_fix = 2.
           if abs(box_location[0,0,ss] - box_location[1,0,ss]) lt threshold_fix and abs(box_location[0,1,ss] - box_location[1,1,ss]) lt threshold_fix then begin
             box_or_fix[ss] = 1
             print,''
