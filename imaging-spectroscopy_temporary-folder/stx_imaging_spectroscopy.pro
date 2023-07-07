@@ -652,6 +652,7 @@ pro stx_imaging_spectroscopy, path_sci_file, path_bkg_file, aux_fits_file, time_
       for this_circ = 0,n_fwdfit_sources-1 do begin
         ;;; if (x,y) bottom-left and top-right are equal (or below ~2 arcsec), 
         ;;; then fix the location, if not, do boxes
+        threshold_fix = 2.
         if abs(box_location[0,0,this_circ] - box_location[1,0,this_circ]) lt threshold_fix and abs(box_location[0,1,this_circ] - box_location[1,1,this_circ]) lt threshold_fix then begin
           srcin.circle[this_circ-counter_ellipses].param_opt.param_x = box_location[0,0,this_circ]
           srcin.circle[this_circ-counter_ellipses].param_opt.param_y = box_location[0,1,this_circ]
