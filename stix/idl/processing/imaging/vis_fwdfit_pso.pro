@@ -91,7 +91,7 @@
 ;   volpara [at] dima.unige.it
 
 
-function vis_fwdfit_pso, configuration, vis, srcin, $
+function vis_fwdfit_pso, configuration, vis, srcin, roll_angle, $
                           n_birds = n_birds, tolerance = tolerance, maxiter = maxiter, $
                           uncertainty = uncertainty, $
                           imsize=imsize, pixel=pixel, $
@@ -214,7 +214,8 @@ function vis_fwdfit_pso, configuration, vis, srcin, $
                                ;and the number of parameters of the source shape)
     param_opt: param_opt, $
     mapcenter : vis.xyoffset, $
-    configuration: configuration }
+    configuration: configuration, $
+    roll_angle: roll_angle}
 
   if n_elements(configuration) eq 1 then begin
     if configuration[0] eq 'loop' then begin
@@ -254,8 +255,10 @@ function vis_fwdfit_pso, configuration, vis, srcin, $
     for i=0, n_circle-1 do begin
       srcstr[i].srctype = 'circle'
       srcstr[i].srcflux = xopt[4*i]
-      srcstr[i].srcx    = xopt[4*i+1] + vis[0].xyoffset[0]
-      srcstr[i].srcy    = xopt[4*i+2] + vis[0].xyoffset[1]
+      
+      srcstr[i].srcx = cos(roll_angle) * xopt[4*i+1] + sin(roll_angle) * xopt[4*i+2]+ vis[0].xyoffset[0]
+      srcstr[i].srcy = -sin(roll_angle) * xopt[4*i+1] + cos(roll_angle) * xopt[4*i+2]+ vis[0].xyoffset[1]
+      
       srcstr[i].srcfwhm_max = xopt[4*i+3]
       srcstr[i].srcfwhm_min = xopt[4*i+3]
     endfor
@@ -271,8 +274,9 @@ function vis_fwdfit_pso, configuration, vis, srcin, $
 
       srcstr[n_circle+i].eccen   = eccen
       srcstr[n_circle+i].srcflux = xopt[n_circle*4+6*i]
-      srcstr[n_circle+i].srcx    = xopt[n_circle*4+6*i+1] + vis[0].xyoffset[0]
-      srcstr[n_circle+i].srcy    = xopt[n_circle*4+6*i+2] + vis[0].xyoffset[1]
+      srcstr[n_circle+i].srcx = cos(roll_angle) * xopt[n_circle*4+6*i+1] + sin(roll_angle) * xopt[n_circle*4+6*i+2]+ vis[0].xyoffset[0]
+      srcstr[n_circle+i].srcy = -sin(roll_angle) * xopt[n_circle*4+6*i+1] + cos(roll_angle) * xopt[n_circle*4+6*i+2]+ vis[0].xyoffset[1]
+           
       srcstr[n_circle+i].srcfwhm_max = xopt[n_circle*4+6*i+3] / (1-eccen^2)^0.25
       srcstr[n_circle+i].srcfwhm_min = xopt[n_circle*4+6*i+3] * (1-eccen^2)^0.25
       srcstr[n_circle+i].eccen   = eccen
@@ -292,8 +296,9 @@ function vis_fwdfit_pso, configuration, vis, srcin, $
 
       srcstr[n_circle+n_ellipse+i].eccen   = eccen
       srcstr[n_circle+n_ellipse+i].srcflux = xopt[n_circle*4+6*n_ellipse+7*i]
-      srcstr[n_circle+n_ellipse+i].srcx    = xopt[n_circle*4+6*n_ellipse+7*i+1] + vis[0].xyoffset[0]
-      srcstr[n_circle+n_ellipse+i].srcy    = xopt[n_circle*4+6*n_ellipse+7*i+2] + vis[0].xyoffset[1]
+      srcstr[n_circle+n_ellipse+i].srcx = cos(roll_angle) * xopt[n_circle*4+6*n_ellipse+7*i+1] + sin(roll_angle) * xopt[n_circle*4+6*n_ellipse+7*i+2]+ vis[0].xyoffset[0]
+      srcstr[n_circle+n_ellipse+i].srcy = -sin(roll_angle) * xopt[n_circle*4+6*n_ellipse+7*i+1] + cos(roll_angle) * xopt[n_circle*4+6*n_ellipse+7*i+2]+ vis[0].xyoffset[1]
+     
       srcstr[n_circle+n_ellipse+i].srcfwhm_max = xopt[n_circle*4+6*n_ellipse+7*i+3] / (1-eccen^2)^0.25
       srcstr[n_circle+n_ellipse+i].srcfwhm_min = xopt[n_circle*4+6*n_ellipse+7*i+3] * (1-eccen^2)^0.25
       srcstr[n_circle+n_ellipse+i].eccen   = eccen
@@ -394,14 +399,15 @@ function vis_fwdfit_pso, configuration, vis, srcin, $
       vistest    = transpose(cmreplicate(vistest, n_birds))
 
       extra = {visobs: vistest, $
-        sigamp: ssigamp, $
-        u: vis.u, $
-        v: vis.v, $
-        n_free: nvis - Nvars, $    ;n_free: degrees of freedom (difference between the number of visibility amplitudes
-                                   ;and the number of parameters of the source shape)
-        param_opt: param_opt, $
-        mapcenter : vis.xyoffset, $
-        configuration: configuration }
+                sigamp: ssigamp, $
+                u: vis.u, $
+                v: vis.v, $
+                n_free: nvis - Nvars, $    ;n_free: degrees of freedom (difference between the number of visibility amplitudes
+                                           ;and the number of parameters of the source shape)
+                param_opt: param_opt, $
+                mapcenter : vis.xyoffset, $
+                configuration: configuration, $
+                roll_angle: roll_angle}
 
       xx_opt = []
       f = fltarr(Nruns)
@@ -421,7 +427,7 @@ function vis_fwdfit_pso, configuration, vis, srcin, $
         matrix_dist_circle  = fltarr(n_circle, n_circle)
         for i=0,n_circle-1 do begin
           for j=0,n_circle-1 do begin
-            d_i_j = sqrt((xopt[4*i+1] + vis[0].xyoffset[0] - srcstr[j].srcx )^2. + (xopt[4*i+2] + vis[0].xyoffset[1] - srcstr[j].srcy )^2.)
+            d_i_j = sqrt((cos(roll_angle) * xopt[4*i+1] + sin(roll_angle) * xopt[4*i+2] + vis[0].xyoffset[0] - srcstr[j].srcx )^2. + (-sin(roll_angle) * xopt[4*i+1] + cos(roll_angle) * xopt[4*i+2] + vis[0].xyoffset[1] - srcstr[j].srcy )^2.)
             matrix_dist_circle[j,i] = d_i_j
           endfor
         endfor
@@ -430,8 +436,10 @@ function vis_fwdfit_pso, configuration, vis, srcin, $
         coord_min = array_indices(matrix_dist_circle eq min(matrix_dist_circle), loc_dist_min0[0])
 
         trial_results[4*coord_min[0], n]   = xopt[4*coord_min[-1]]
-        trial_results[4*coord_min[0]+1, n] = xopt[4*coord_min[-1]+1] + vis[0].xyoffset[0]
-        trial_results[4*coord_min[0]+2, n] = xopt[4*coord_min[-1]+2] + vis[0].xyoffset[1]
+        
+        trial_results[4*coord_min[0]+1, n] = cos(roll_angle) * xopt[4*coord_min[-1]+1] + sin(roll_angle) * xopt[4*coord_min[-1]+2] + vis[0].xyoffset[0]
+        trial_results[4*coord_min[0]+2, n] = -sin(roll_angle) * xopt[4*coord_min[-1]+1] + cos(roll_angle) * xopt[4*coord_min[-1]+2] + vis[0].xyoffset[1]
+        
         trial_results[4*coord_min[0]+3, n] = xopt[4*coord_min[-1]+3]
 
         matrix_dist_circle_norows = matrix_dist_circle
@@ -454,8 +462,11 @@ function vis_fwdfit_pso, configuration, vis, srcin, $
             endelse
 
             trial_results[4*coord_min[0], n]   = xopt[4*coord_min[1]]
-            trial_results[4*coord_min[0]+1, n] = xopt[4*coord_min[1]+1] + vis[0].xyoffset[0]
-            trial_results[4*coord_min[0]+2, n] = xopt[4*coord_min[1]+2] + vis[0].xyoffset[1]
+            
+            trial_results[4*coord_min[0]+1, n] = cos(roll_angle) * xopt[4*coord_min[1]+1] + sin(roll_angle) * xopt[4*coord_min[1]+2] + vis[0].xyoffset[0]
+            trial_results[4*coord_min[0]+2, n] = -sin(roll_angle) * xopt[4*coord_min[1]+1] + cos(roll_angle) * xopt[4*coord_min[1]+2] + vis[0].xyoffset[1]
+            
+            
             trial_results[4*coord_min[0]+3, n] = xopt[4*coord_min[1]+3]
           endfor
         endif
@@ -468,7 +479,8 @@ function vis_fwdfit_pso, configuration, vis, srcin, $
         matrix_dist_ellipse  = fltarr(n_ellipse, n_ellipse)
         for i=0,n_ellipse-1 do begin
           for j=0,n_ellipse-1 do begin
-            d_i_j = sqrt((xopt[n_circle*4+6*i+1] + vis[0].xyoffset[0] - srcstr[n_circle+j].srcx )^2. + (xopt[n_circle*4+6*i+2] + vis[0].xyoffset[1] - srcstr[n_circle+j].srcy )^2.)
+            d_i_j = sqrt((cos(roll_angle) * xopt[n_circle*4+6*i+1] + sin(roll_angle) * xopt[n_circle*4+6*i+2] + vis[0].xyoffset[0] - srcstr[n_circle+j].srcx )^2. + (-sin(roll_angle) * xopt[n_circle*4+6*i+1] + cos(roll_angle) * xopt[n_circle*4+6*i+2] + vis[0].xyoffset[1] - srcstr[n_circle+j].srcy )^2.)
+
             matrix_dist_ellipse[j,i] = d_i_j
           endfor
         endfor
@@ -480,8 +492,10 @@ function vis_fwdfit_pso, configuration, vis, srcin, $
         eccen = SQRT(1 - EXP(-2*ecmsr))
 
         trial_results[4*n_circle+6*coord_min[0], n]   = xopt[n_circle*4+6*coord_min[-1]]
-        trial_results[4*n_circle+6*coord_min[0]+1, n] = xopt[n_circle*4+6*coord_min[-1]+1] + vis[0].xyoffset[0]
-        trial_results[4*n_circle+6*coord_min[0]+2, n] = xopt[n_circle*4+6*coord_min[-1]+2] + vis[0].xyoffset[1]
+        
+        trial_results[4*n_circle+6*coord_min[0]+1, n] = cos(roll_angle) * xopt[n_circle*4+6*coord_min[-1]+1] + sin(roll_angle) * xopt[n_circle*4+6*coord_min[-1]+2] + vis[0].xyoffset[0]
+        trial_results[4*n_circle+6*coord_min[0]+2, n] = -sin(roll_angle) * xopt[n_circle*4+6*coord_min[-1]+1] + cos(roll_angle) * xopt[n_circle*4+6*coord_min[-1]+2] + vis[0].xyoffset[1]
+        
         trial_results[4*n_circle+6*coord_min[0]+3, n] = xopt[n_circle*4+6*coord_min[-1]+3] / (1-eccen^2)^0.25
         trial_results[4*n_circle+6*coord_min[0]+4, n] = xopt[n_circle*4+6*coord_min[-1]+3] * (1-eccen^2)^0.25
 
@@ -513,6 +527,10 @@ function vis_fwdfit_pso, configuration, vis, srcin, $
             trial_results[4*n_circle+6*coord_min[0], n]   = xopt[n_circle*4+6*coord_min[1]]
             trial_results[4*n_circle+6*coord_min[0]+1, n] = xopt[n_circle*4+6*coord_min[1]+1] + vis[0].xyoffset[0]
             trial_results[4*n_circle+6*coord_min[0]+2, n] = xopt[n_circle*4+6*coord_min[1]+2] + vis[0].xyoffset[1]
+            
+            trial_results[4*n_circle+6*coord_min[0]+1, n] = cos(roll_angle) * xopt[n_circle*4+6*coord_min[1]+1] + sin(roll_angle) * xopt[n_circle*4+6*coord_min[1]+2] + vis[0].xyoffset[0]
+            trial_results[4*n_circle+6*coord_min[0]+2, n] = -sin(roll_angle) * xopt[n_circle*4+6*coord_min[1]+1] + cos(roll_angle) * xopt[n_circle*4+6*coord_min[1]+2] + vis[0].xyoffset[1]
+            
             trial_results[4*n_circle+6*coord_min[0]+3, n] = xopt[n_circle*4+6*coord_min[1]+3] / (1-eccen^2)^0.25
             trial_results[4*n_circle+6*coord_min[0]+4, n] = xopt[n_circle*4+6*coord_min[1]+3] * (1-eccen^2)^0.25
 
@@ -530,7 +548,8 @@ function vis_fwdfit_pso, configuration, vis, srcin, $
         matrix_dist_loop  = fltarr(n_loop, n_loop)
         for i=0,n_loop-1 do begin
           for j=0,n_loop-1 do begin
-            d_i_j = sqrt((xopt[n_circle*4+6*n_ellipse+7*i+1] + vis[0].xyoffset[0] - srcstr[n_circle+n_ellipse+j].srcx )^2. + (xopt[n_circle*4+6*n_ellipse+7*i+2] + vis[0].xyoffset[1] - srcstr[n_circle+n_ellipse+j].srcy )^2.)
+            d_i_j = sqrt((cos(roll_angle) * xopt[n_circle*4+6*n_ellipse+7*i+1] + sin(roll_angle) * xopt[n_circle*4+6*n_ellipse+7*i+2] + vis[0].xyoffset[0] - srcstr[n_circle+j].srcx )^2. + (-sin(roll_angle) * xopt[n_circle*4+6*n_ellipse+7*i+1] + cos(roll_angle) * xopt[n_circle*4+6*n_ellipse+7*i+2] + vis[0].xyoffset[1] - srcstr[n_circle+j].srcy )^2.)
+
             matrix_dist_loop[j,i] = d_i_j
           endfor
         endfor
@@ -542,8 +561,10 @@ function vis_fwdfit_pso, configuration, vis, srcin, $
         eccen = SQRT(1 - EXP(-2*ecmsr))
 
         trial_results[4*n_circle+6*n_ellipse+7*coord_min[0], n]   = xopt[n_circle*4+6*n_ellipse+7*coord_min[-1]]
-        trial_results[4*n_circle+6*n_ellipse+7*coord_min[0]+1, n] = xopt[n_circle*4+6*n_ellipse+7*coord_min[-1]+1] + vis[0].xyoffset[0]
-        trial_results[4*n_circle+6*n_ellipse+7*coord_min[0]+2, n] = xopt[n_circle*4+6*n_ellipse+7*coord_min[-1]+2] + vis[0].xyoffset[1]
+
+        trial_results[4*n_circle+6*n_ellipse+7*coord_min[0]+1, n] = cos(roll_angle) * xopt[n_circle*4+6*n_ellipse+7*coord_min[-1]+1] + sin(roll_angle) * xopt[n_circle*4+6*n_ellipse+7*coord_min[-1]+2] + vis[0].xyoffset[0]
+        trial_results[4*n_circle+6*n_ellipse+7*coord_min[0]+2, n] =  -sin(roll_angle) * xopt[n_circle*4+6*n_ellipse+7*coord_min[-1]+1] + cos(roll_angle) * xopt[n_circle*4+6*n_ellipse+7*coord_min[-1]+2] + vis[0].xyoffset[1]
+        
         trial_results[4*n_circle+6*n_ellipse+7*coord_min[0]+3, n] = xopt[n_circle*4+6*n_ellipse+7*coord_min[-1]+3] / (1-eccen^2)^0.25
         trial_results[4*n_circle+6*n_ellipse+7*coord_min[0]+4, n] = xopt[n_circle*4+6*n_ellipse+7*coord_min[-1]+3] * (1-eccen^2)^0.25
 
@@ -581,8 +602,10 @@ function vis_fwdfit_pso, configuration, vis, srcin, $
             eccen = SQRT(1 - EXP(-2*ecmsr))
 
             trial_results[4*n_circle+6*n_ellipse+7*coord_min[0], n]   = xopt[n_circle*4+6*n_ellipse+7*coord_min[1]]
-            trial_results[4*n_circle+6*n_ellipse+7*coord_min[0]+1, n] = xopt[n_circle*4+6*n_ellipse+7*coord_min[1]+1] + vis[0].xyoffset[0]
-            trial_results[4*n_circle+6*n_ellipse+7*coord_min[0]+2, n] = xopt[n_circle*4+6*n_ellipse+7*coord_min[1]+2] + vis[0].xyoffset[1]
+            
+            trial_results[4*n_circle+6*n_ellipse+7*coord_min[0]+1, n] = cos(roll_angle) * xopt[4*n_circle+6*n_ellipse+7*coord_min[0]+1] + sin(roll_angle) * xopt[4*n_circle+6*n_ellipse+7*coord_min[0]+2] + vis[0].xyoffset[0]
+            trial_results[4*n_circle+6*n_ellipse+7*coord_min[0]+2, n] =  -sin(roll_angle) * xopt[4*n_circle+6*n_ellipse+7*coord_min[0]+1] + cos(roll_angle) * xopt[4*n_circle+6*n_ellipse+7*coord_min[0]+2] + vis[0].xyoffset[1]          
+            
             trial_results[4*n_circle+6*n_ellipse+7*coord_min[0]+3, n] = xopt[n_circle*4+6*n_ellipse+7*coord_min[1]+3] / (1-eccen^2)^0.25
             trial_results[4*n_circle+6*n_ellipse+7*coord_min[0]+4, n] = xopt[n_circle*4+6*n_ellipse+7*coord_min[1]+3] * (1-eccen^2)^0.25
 

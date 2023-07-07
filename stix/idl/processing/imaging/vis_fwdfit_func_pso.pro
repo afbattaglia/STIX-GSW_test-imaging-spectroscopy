@@ -22,6 +22,7 @@ function vis_fwdfit_func_pso, xx, extra = extra
   configuration = extra.configuration
   param_opt = extra.param_opt
   mapcenter = extra.mapcenter
+  roll_angle = extra.roll_angle
   
   loc_circle  = where(configuration eq 'circle', n_circle)>0
   loc_ellipse = where(configuration eq 'ellipse', n_ellipse)>0
@@ -97,9 +98,9 @@ function vis_fwdfit_func_pso, xx, extra = extra
       if flag then xx[*, 4*i+3] = xx[*, 4*i+3] * 0. + double(param_opt[4*i+3])
       fwhm = reform(xx[*,4*i+3], [n_particles,1])
       
-      vispred_re += flux * exp(-(!pi^2. * fwhm^2. / (4.*alog(2.)))#(u^2. + v^2.))*cos(2*!pi*((x_loc#u)+(y_loc#v)))
-      vispred_im += flux * exp(-(!pi^2. * fwhm^2. / (4.*alog(2.)))#(u^2. + v^2.))*sin(2*!pi*((x_loc#u)+(y_loc#v)))
-      
+vispred_re += flux * exp(-(!pi^2. * fwhm^2. / (4.*alog(2.)))#(u^2. + v^2.))*cos(2*!pi*(((cos(roll_angle)  * x_loc + sin(roll_angle) * y_loc)#u)+((-sin(roll_angle) * x_loc + cos(roll_angle) * y_loc))#v))
+vispred_im += flux * exp(-(!pi^2. * fwhm^2. / (4.*alog(2.)))#(u^2. + v^2.))*sin(2*!pi*(((cos(roll_angle)  * x_loc + sin(roll_angle) * y_loc)#u)+((-sin(roll_angle) * x_loc + cos(roll_angle) * y_loc))#v))
+     
     endfor
     
   endif   
@@ -218,8 +219,8 @@ function vis_fwdfit_func_pso, xx, extra = extra
       if flag then xx[*, n_circle*4+6*i+2] = xx[*, n_circle*4+6*i+2] * 0. + double(param_opt[n_circle*4+6*i+2]) - mapcenter[1]
       y_loc = reform(xx[*,n_circle*4+6*i+2], [n_particles,1])
 
-      vispred_re += flux * exp(-(!pi^2. / (4.*alog(2.)))*((u1 * fwhmmajor)^2. + (v1 * fwhmminor)^2.))*cos(2*!pi*((x_loc#u)+(y_loc#v)))
-      vispred_im += flux * exp(-(!pi^2. / (4.*alog(2.)))*((u1 * fwhmmajor)^2. + (v1 * fwhmminor)^2.))*sin(2*!pi*((x_loc#u)+(y_loc#v)))
+      vispred_re += flux * exp(-(!pi^2. / (4.*alog(2.)))*((u1 * fwhmmajor)^2. + (v1 * fwhmminor)^2.))*cos(2*!pi*((( cos(roll_angle)  * x_loc + sin(roll_angle) * y_loc)#u)+( (-sin(roll_angle) * x_loc + cos(roll_angle) * y_loc)#v)))
+      vispred_im += flux * exp(-(!pi^2. / (4.*alog(2.)))*((u1 * fwhmmajor)^2. + (v1 * fwhmminor)^2.))*sin(2*!pi*(( (cos(roll_angle)  * x_loc + sin(roll_angle) * y_loc)#u)+( (-sin(roll_angle) * x_loc + cos(roll_angle) * y_loc)#v)))
            
     endfor
     
@@ -351,7 +352,7 @@ function vis_fwdfit_func_pso, xx, extra = extra
       if flag then xx[*, n_circle*4+n_ellipse*6+7*i+6] = xx[*, n_circle*4+n_ellipse*6+7*i+6] * 0. + double(param_opt[n_circle*4+n_ellipse*6+7*i+6])
       loop_angle = reform(xx[*,n_circle*4+n_ellipse*6+7*i+6], [n_particles,1])
     
-      vis_pred = vis_fwdfit_pso_func_makealoop( flux, xx[*,n_circle*4+n_ellipse*6+7*i+3], eccen, x_loc, y_loc, pa, loop_angle, u, v)
+      vis_pred = vis_fwdfit_pso_func_makealoop( flux, xx[*,n_circle*4+n_ellipse*6+7*i+3], eccen,  (-sin(roll_angle) * x_loc + cos(roll_angle) * y_loc),  (-sin(roll_angle) * x_loc + cos(roll_angle) * y_loc), pa, loop_angle, u, v)
     
       vispred_re += vis_pred[*,0:n_elements(u)-1]
       vispred_im += vis_pred[*, n_elements(u):2*n_elements(u)-1]

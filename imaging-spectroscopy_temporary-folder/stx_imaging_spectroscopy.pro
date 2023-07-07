@@ -607,7 +607,7 @@ pro stx_imaging_spectroscopy, path_sci_file, path_bkg_file, aux_fits_file, time_
 
           box_location[0,*,ss] = [tmp_bl[0], tmp_bl[1]]
           box_location[1,*,ss] = [tmp_tr[0], tmp_tr[1]]
-          threshold_fix = 2.
+          ;threshold_fix = 2.
           if abs(box_location[0,0,ss] - box_location[1,0,ss]) lt threshold_fix and abs(box_location[0,1,ss] - box_location[1,1,ss]) lt threshold_fix then begin
             box_or_fix[ss] = 1
             print,''
@@ -765,23 +765,23 @@ pro stx_imaging_spectroscopy, path_sci_file, path_bkg_file, aux_fits_file, time_
     loadct,5,/sil
     plot_map,clean_map[0],/limb,grid=grid,chars=ch_sz,title=title_clean
     if keyword_set(source_loc) then for i=0,n_elements(old_fixedpos[0,*])-1 do plots,old_fixedpos[0,i],old_fixedpos[1,i],/data,psym=1,syms=3,color=cgcolor('slate gray'),thick=3
-    if keyword_set(box_location) then plot_boxes, old_boxes, box_or_fix
+    if keyword_set(box_location) then plot_boxes, box_location, box_or_fix
     loadct,5,/sil
     plot_map,memge_map,/limb,grid=grid,chars=ch_sz,title=title_mem
     if keyword_set(source_loc) then for i=0,n_elements(old_fixedpos[0,*])-1 do plots,old_fixedpos[0,i],old_fixedpos[1,i],/data,psym=1,syms=3,color=cgcolor('slate gray'),thick=3
-    if keyword_set(box_location) then plot_boxes, old_boxes, box_or_fix
+    if keyword_set(box_location) then plot_boxes, box_location, box_or_fix
     loadct,5,/sil
     plot_map,fwdfit_map,/limb,grid=grid,chars=ch_sz
     if keyword_set(source_loc) then for i=0,n_elements(old_fixedpos[0,*])-1 do plots,old_fixedpos[0,i],old_fixedpos[1,i],/data,psym=1,syms=3,color=cgcolor('slate gray'),thick=3
-    if keyword_set(box_location) then plot_boxes, old_boxes, box_or_fix
+    if keyword_set(box_location) then plot_boxes, box_location, box_or_fix
     loadct,5,/sil
     plot_map,bp_map,/limb,grid=grid,chars=ch_sz
     if keyword_set(source_loc) then for i=0,n_elements(old_fixedpos[0,*])-1 do plots,old_fixedpos[0,i],old_fixedpos[1,i],/data,psym=1,syms=3,color=cgcolor('slate gray'),thick=3
-    if keyword_set(box_location) then plot_boxes, old_boxes, box_or_fix
+    if keyword_set(box_location) then plot_boxes, box_location, box_or_fix
     loadct,5,/sil
     plot_map,bp_diff_map,/limb,grid=grid,chars=ch_sz,dmax=max(bp_map.data)
     if keyword_set(source_loc) then for i=0,n_elements(old_fixedpos[0,*])-1 do plots,old_fixedpos[0,i],old_fixedpos[1,i],/data,psym=1,syms=3,color=cgcolor('slate gray'),thick=3
-    if keyword_set(box_location) then plot_boxes, old_boxes, box_or_fix
+    if keyword_set(box_location) then plot_boxes, box_location, box_or_fix
     plot_map,bp_map,/nodata
 
     ;; Print some useful text

@@ -118,12 +118,26 @@ function stx_vis_fwdfit_pso, configuration, vis, aux_data, $
         if ((flag1 eq 1) and (flag2 eq 1)) then begin
 
           this_xy_c = stx_hpc2stx_coord([double(srcin.circle[j].param_opt.param_x),double(srcin.circle[j].param_opt.param_y)], aux_data)
-          
-          srcin.circle[j].param_opt.param_x = string(this_xy_c[0])
-          srcin.circle[j].param_opt.param_y = string(this_xy_c[1])
-          
-        endif
+          ;Helioprojective Cartesian coordinate frame
+          this_this_xy_c = stx_hpc2rtn_coord(this_xy_c, aux_data, /inverse)
+          this_xyoffset = stx_hpc2rtn_coord(vis[0].xyoffset, aux_data, /inverse)
+          this_vis.xyoffset = this_xyoffset
 
+          srcin.circle[j].param_opt.param_x = string(this_this_xy_c[0])
+          srcin.circle[j].param_opt.param_y = string(this_this_xy_c[1])
+                    
+        endif
+        ; upper and lower bound transformation: from the Solar Orbiter coordinate frame to the STIX coordinate frame 
+        this_l_b_x = srcin.circle[j].lower_bound.l_b_y
+        this_u_b_x = srcin.circle[j].upper_bound.u_b_y
+        this_l_b_y = - srcin.circle[j].upper_bound.u_b_x
+        this_u_b_y = - srcin.circle[j].lower_bound.l_b_x
+        
+        srcin.circle[j].lower_bound.l_b_x = this_l_b_x
+        srcin.circle[j].upper_bound.u_b_x = this_u_b_x
+
+        srcin.circle[j].lower_bound.l_b_y = this_l_b_y
+        srcin.circle[j].upper_bound.u_b_y = this_u_b_y 
         
       endfor
     endif
@@ -162,12 +176,16 @@ function stx_vis_fwdfit_pso, configuration, vis, aux_data, $
           message, "Fix both x and y positions or none of them."
         endif
         if ((flag3 eq 1) and (flag4 eq 1)) then begin
-        
-          this_xy_e = stx_hpc2stx_coord([double(srcin.ellipse[j].param_opt.param_x),double(srcin.ellipse[j].param_opt.param_y)], aux_data)
 
-          srcin.ellipse[j].param_opt.param_x = string(this_xy_e[0])
-          srcin.ellipse[j].param_opt.param_y = string(this_xy_e[1])
-        
+          this_xy_e = stx_hpc2stx_coord([double(srcin.ellipse[j].param_opt.param_x),double(srcin.ellipse[j].param_opt.param_y)], aux_data)
+          ;Helioprojective Cartesian coordinate frame
+          this_this_xy_e = stx_hpc2rtn_coord(this_xy_e, aux_data, /inverse)
+          this_xyoffset = stx_hpc2rtn_coord(vis[0].xyoffset, aux_data, /inverse)
+          this_vis.xyoffset = this_xyoffset
+
+          srcin.ellipse[j].param_opt.param_x = string(this_this_xy_e[0])
+          srcin.ellipse[j].param_opt.param_y = string(this_this_xy_e[1])
+
         endif
 
         
@@ -184,6 +202,17 @@ function stx_vis_fwdfit_pso, configuration, vis, aux_data, $
         ; Cause type conversion error.
         if flag then srcin.ellipse[j].param_opt.param_alpha = string(double(srcin.ellipse[j].param_opt.param_alpha) - 90.0 - aux_data.roll_angle)
                 
+        ; upper and lower bound transformation: from the Solar Orbiter coordinate frame to the STIX coordinate frame
+        this_l_b_x = srcin.ellipse[j].lower_bound.l_b_y
+        this_u_b_x = srcin.ellipse[j].upper_bound.u_b_y
+        this_l_b_y = - srcin.ellipse[j].upper_bound.u_b_x
+        this_u_b_y = - srcin.ellipse[j].lower_bound.l_b_x
+
+        srcin.ellipse[j].lower_bound.l_b_x = this_l_b_x
+        srcin.ellipse[j].upper_bound.u_b_x = this_u_b_x
+
+        srcin.ellipse[j].lower_bound.l_b_y = this_l_b_y
+        srcin.ellipse[j].upper_bound.u_b_y = this_u_b_y        
       endfor
     endif
 
@@ -221,12 +250,15 @@ function stx_vis_fwdfit_pso, configuration, vis, aux_data, $
           message, "Fix both x and y positions or none of them."
         endif
         if ((flag5 eq 1) and (flag6 eq 1)) then begin
-          
+                  
           this_xy_l = stx_hpc2stx_coord([double(srcin.loop[j].param_opt.param_x),double(srcin.loop[j].param_opt.param_y)], aux_data)
+          ; Helioprojective Cartesian coordinate frame
+          this_this_xy_l = stx_hpc2rtn_coord(this_xy_l, aux_data, /inverse)
+          this_xyoffset = stx_hpc2rtn_coord(vis[0].xyoffset, aux_data, /inverse)
+          this_vis.xyoffset = this_xyoffset
 
-          srcin.loop[j].param_opt.param_x = string(this_xy_l[0])
-          srcin.loop[j].param_opt.param_y = string(this_xy_l[1])
-          
+          srcin.loop[j].param_opt.param_x = string(this_this_xy_l[0])
+          srcin.loop[j].param_opt.param_y = string(this_this_xy_l[1])
         endif
         
         
@@ -244,6 +276,19 @@ function stx_vis_fwdfit_pso, configuration, vis, aux_data, $
         ; Cause type conversion error.
         if flag then srcin.loop[j].param_opt.param_alpha = string(double(srcin.loop[j].param_opt.param_alpha) - 90. - aux_data.roll_angle)
 
+        ; upper and lower bound transformation: from the Solar Orbiter coordinate frame to the STIX coordinate frame
+        this_l_b_x = srcin.loop[j].lower_bound.l_b_y
+        this_u_b_x = srcin.loop[j].upper_bound.u_b_y
+        this_l_b_y = - srcin.loop[j].upper_bound.u_b_x
+        this_u_b_y = - srcin.loop[j].lower_bound.l_b_x
+
+        srcin.loop[j].lower_bound.l_b_x = this_l_b_x
+        srcin.loop[j].upper_bound.u_b_x = this_u_b_x
+
+        srcin.loop[j].lower_bound.l_b_y = this_l_b_y
+        srcin.loop[j].upper_bound.u_b_y = this_u_b_y
+
+
       endfor
     endif
 
@@ -254,7 +299,7 @@ function stx_vis_fwdfit_pso, configuration, vis, aux_data, $
   endelse
 
 
-  param_out = vis_fwdfit_pso(configuration, this_vis, srcin, $
+  param_out = vis_fwdfit_pso(configuration, this_vis, srcin, aux_data.ROLL_ANGLE * !dtor, $
                               n_birds = n_birds, tolerance = tolerance, maxiter = maxiter, $
                               uncertainty = uncertainty, $
                               imsize=imsize, pixel=pixel, $
@@ -262,6 +307,10 @@ function stx_vis_fwdfit_pso, configuration, vis, aux_data, $
                               seedstart = seedstart)
 
   srcstr = param_out.srcstr
+  for kk =0, n_elements(srcstr)-1 do begin
+    srcstr[kk].srcx = srcstr[kk].srcx - this_vis[0].xyoffset[0] + vis[0].xyoffset[0]
+    srcstr[kk].srcy = srcstr[kk].srcy - this_vis[0].xyoffset[1] + vis[0].xyoffset[1]
+  endfor
   fitsigmas = param_out.fitsigmas
   redchisq = param_out.redchisq
   
