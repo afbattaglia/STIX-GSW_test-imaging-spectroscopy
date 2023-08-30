@@ -27,6 +27,7 @@
 ;    asw_obj     - object that created image_str
 ;
 ; :Author: 27-sep-2016, rschwartz70@gmail.com
+;          30-aug-2023 - ECMD (Graz), change in definition of time axis 
 ;-
 pro stx_map2fits_cube, image_str, filename, maps, energy_axis = energy_axis, time_axis = time_axis, $
   date_obs = date_obs, asw_obj = asw
@@ -44,7 +45,7 @@ pro stx_map2fits_cube, image_str, filename, maps, energy_axis = energy_axis, tim
   
   ;write a summary extension that gives energy axis and time axis
   summary = {energy_axis: energy_axis, time_axis: time_axis, date_obs: anytim( date_obs, /vms),$
-    time_axis_vms: anytim( anytim( date_obs ) + time_axis, /vms )}
+    time_axis_vms: anytim( time_axis, /vms )}
   mwrfits, summary, filename, /silent
   fits_info, filename, /silent, n_ext=n_ext
   fxhmodify,filename,extension = n_ext, 'EXTNAME ', 'SUMMARY INFO'

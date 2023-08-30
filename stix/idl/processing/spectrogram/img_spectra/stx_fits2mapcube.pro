@@ -21,7 +21,9 @@
 ; History     : 13-sep-2016, ras, adopted from hsi_fits2map
 ;
 ; Modifications:
-
+;          30-aug-2023 - ECMD (Graz), change in definition of time axis 
+;
+;
 ;
 ; Contact     : 28-sep-2016, rschwartz70@gmail.com, richard.schwartz@nasa.gov
 ;-
@@ -50,7 +52,6 @@ pro stx_fits2mapcube, filename, sep=sep, is_cube = is_cube, $
 
   ; old files have times_arr & ebands_arr, new ones have time_axis & energy_axis
   times = tag_exist(index, 'times_arr') ? index.times_arr : summary.time_axis
-  times += anytim( summary.time_axis ) + anytim( index.date_obs )
   ebands = tag_exist(index, 'ebands_arr') ? index.ebands_arr : summary.energy_axis
 
 
