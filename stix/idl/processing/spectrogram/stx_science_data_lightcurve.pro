@@ -80,7 +80,7 @@
 ;-
 function stx_science_data_lightcurve, fits_path, energy_ranges = edges_in,  time_min = time_min,  $
   fits_path_bk =  fits_path_bk, plot_obj = plot_obj, time_shift = time_shift, rate = rate, shift_duration = shift_duration, $
-  det_ind = det_ind, pix_ind = pix_ind, sys_uncert = sys_uncert, time_range = time_range
+  det_ind = det_ind, pix_ind = pix_ind, sys_uncert = sys_uncert, time_range = time_range, spex_units = spex_units, _extra= _extra
 
 
   default, time_min, 20
