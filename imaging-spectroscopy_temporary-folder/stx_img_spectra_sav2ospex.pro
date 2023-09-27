@@ -59,7 +59,7 @@ pro stx_img_spectra_sav2ospex, folder, algo
         energy_range: MEMGE_MAP.energy_range, $
         map : MEMGE_MAP $
       }
-      else: message, 'Algorithm '+algo+' not found.'
+      else: message, 'Algorithm '+algo+' not found. Options are: clean, fwdfit or memge'
     endcase
     l.add,image
 
@@ -67,7 +67,7 @@ pro stx_img_spectra_sav2ospex, folder, algo
   s = l.toarray()
 
   filename = 'stx_image_cube_' +algo+'_'+time2fid(atime(TIME_RANGE_SO[0]),/time,/sec,/full)+'-'+ strmid(time2fid(atime(TIME_RANGE_SO[1]),/time,/sec),7,6)+'.fits'
-
+  
   stx_map2fits_cube, s, filename, maps, energy_axis = energy_axis, time_axis = time_axis
 
   ospex_obj = ospex()

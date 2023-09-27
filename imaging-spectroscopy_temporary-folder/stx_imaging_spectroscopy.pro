@@ -144,6 +144,12 @@
 ;
 ;   beam_width           : beam width for the CLEAN algorithm. If not specified, then 14.8 is used (resolution of
 ;                          the subcollimator 3).
+;                         
+;   no_mem_ge            : if set, it does not produce any MEM_GE maps
+;   
+;   no_clean             : if set, it does not produce any CLEAN maps
+;   
+;   no_fwdfit            : if set, it does not produce any FWDFIT maps
 ;
 ; HISTORY: 
 ;   July 2023, Battaglia A. F. (FHNW & ETHZ), initial release
@@ -176,6 +182,9 @@ pro stx_imaging_spectroscopy, path_sci_file, path_bkg_file, aux_fits_file, time_
   select_box_location = select_box_location, $
   box_location = box_location, $
   ellipse_shape = ellipse_shape, $
+  no_mem_ge = no_mem_ge, $
+  no_clean = no_clean, $
+  no_fwdfit = no_fwdfit, $
   ;; --- Standard imaging inputs
   subc_index = subc_index, $
   pixels = pixels, $
@@ -228,6 +237,12 @@ pro stx_imaging_spectroscopy, path_sci_file, path_bkg_file, aux_fits_file, time_
     print,'By default, regularized visibilities are used. Therefore, energy_max_inversion has to be defined!'
     message,'---> If you want to use the standard visibilities, then set the keyword /observed_vis'
   endif
+  if not keyword_set(no_fwdfit) and keyword_set(no_clean) then begin
+    print,''
+    print,'It is not possible to do FWDFIT without CLEAN, as CLEAN is used as context to select the sources.'
+    message,'---> Please, review your keywords!'
+  endif
+
 
   
   ;;;;; Some variables that we need to initialize here
@@ -450,15 +465,31 @@ pro stx_imaging_spectroscopy, path_sci_file, path_bkg_file, aux_fits_file, time_
     
     
     ;;;;; CLEAN
-    ;; Get the CLEAN box
-    clean_box = where(rotate(bp_map.data,3) ge contour_clean_box*max(bp_map.data))
-    ;; Do CLEAN
-    clean_map = stx_vis_clean(vis, aux_data, niter=niter, image_dim=imsize[0], PIXEL=pixel[0], $
-      gain=gain, nmap=nmap, /plot, beam_width=beam_width, clean_box=clean_box)
+    if not keyword_set(no_clean) then begin
+      ;; Get the CLEAN box
+      clean_box = where(rotate(bp_map.data,3) ge contour_clean_box*max(bp_map.data))
+      ;; Do CLEAN
+      clean_map = stx_vis_clean(vis, aux_data, niter=niter, image_dim=imsize[0], PIXEL=pixel[0], $
+        gain=gain, nmap=nmap, /plot, beam_width=beam_width, clean_box=clean_box)
+    endif else begin
+      ;; Define an empty CLEAN
+      clean_map = bp_map
+      clean_map.data *= 0.
+      clean_map.data += 1d-10
+      clean_map.id    = '/no_clean set'
+    endelse
       
     
     ;;;;; MEM
-    memge_map = stx_mem_ge(vis,imsize,pixel,aux_data,total_flux=max(abs(vis.obsvis)))
+    if not keyword_set(no_mem_ge) then begin
+      memge_map = stx_mem_ge(vis,imsize,pixel,aux_data,total_flux=max(abs(vis.obsvis)))
+    endif else begin
+      ;; Define an empty MEM_GE
+      memge_map = bp_map
+      memge_map.data *= 0.
+      memge_map.data += 1d-10
+      memge_map.id    = '/no_mem_ge set'
+    endelse
     
     
     ;;;;; Plot the maps and the number of counts
@@ -478,276 +509,293 @@ pro stx_imaging_spectroscopy, path_sci_file, path_bkg_file, aux_fits_file, time_
     loadct,5,/sil
     plot_map,bp_map,/limb,grid=grid,chars=ch_sz
     plot_map,clean_map[0],/limb,grid=grid,chars=ch_sz
-    plot_map,clean_map[0],/over,/perc,levels=[30,50],color=cgcolor('cyan'),thick=2
-    plot_map,clean_map[0],/over,levels=[max(clean_map[2].data)],color=cgcolor('dark green'),thick=2
-    xyouts,0.41,0.75,'Peak residual',/normal,charsize=ch_sz,chart=2.2,color=cgcolor('dark green')
-    xyouts,0.41,0.81,'[30,50]%',/normal,charsize=ch_sz,chart=2.2,color=cgcolor('cyan')
+    if not keyword_set(no_clean) then plot_map,clean_map[0],/over,/perc,levels=[30,50],color=cgcolor('cyan'),thick=2
+    if not keyword_set(no_clean) then plot_map,clean_map[0],/over,levels=[max(clean_map[2].data)],color=cgcolor('dark green'),thick=2
+    if not keyword_set(no_clean) then xyouts,0.41,0.75,'Peak residual',/normal,charsize=ch_sz,chart=2.2,color=cgcolor('dark green')
+    if not keyword_set(no_clean) then xyouts,0.41,0.81,'[30,50]%',/normal,charsize=ch_sz,chart=2.2,color=cgcolor('cyan')
     loadct,5,/sil
     plot_map,memge_map,/limb,grid=grid,chars=ch_sz
-    plot_map,memge_map,/over,/perc,levels=[30,50],color=cgcolor('cyan'),thick=2
-    xyouts,0.74,0.81,'[30,50]%',/normal,charsize=ch_sz,chart=2.2,color=cgcolor('cyan')
-
-    
-    ;;;;; If configuration_fwdfit is not set, then select the number of sources
-    if not keyword_set(configuration_fwdfit) then begin
-      ;; Plot CLEAN again to select the sources on the screen
-      loadct,5,/silent
-      !p.multi = 0
-      window,12,xsize=1300,ysize=1300;,xpos=2300
-      plot_map,clean_map[4],/limb,grid=grid,chars=ch_sz
-      plot_map,clean_map[4],/over,/perc,levels=[30,50],color=cgcolor('cyan'),thick=2
-      ;plot_map,clean_map[4],/over,levels=[max(clean_map[2].data)],color=cgcolor('dark green'),thick=2
-      ;xyouts,0.21,0.75,'Peak residual',/normal,charsize=ch_sz,chart=2.2,color=cgcolor('dark green')
-      xyouts,0.21,0.8,'[30,50]%',/normal,charsize=ch_sz,chart=2.2,color=cgcolor('cyan')
-      
-      ;; Overplot the center of the previously selected sources
-      if old_nsources gt 0 and keyword_set(source_loc) then begin
-        for i=0,n_elements(all_fixedpos[0,*])-1 do plots,all_fixedpos[0,i],all_fixedpos[1,i],/data,psym=1,syms=5,color=cgcolor('Slate Gray'),thick=3
-        for i=0,n_elements(old_fixedpos[0,*])-1 do plots,old_fixedpos[0,i],old_fixedpos[1,i],/data,psym=1,syms=5,color=cgcolor('magenta'),thick=5
-        xyouts,0.21,0.77,'All previously selected locations',/normal,charsize=ch_sz,chart=2.2,color=cgcolor('Slate Gray')
-        xyouts,0.21,0.74,'Latest selected locations',/normal,charsize=ch_sz,chart=2.2,color=cgcolor('magenta')
-      endif
-
-      ;; Overplot the previously selected boxes
-      if old_nsources gt 0 and keyword_set(box_location) then begin
-        plot_boxes, all_boxes, all_box_or_fix
-        plot_boxes, old_boxes, box_or_fix, color='magenta'
-        xyouts,0.21,0.77,'All previously selected boxes',/normal,charsize=ch_sz,chart=2.2,color=cgcolor('Slate Gray')
-        xyouts,0.21,0.74,'Latest selected boxes',/normal,charsize=ch_sz,chart=2.2,color=cgcolor('magenta')
-      endif
-      
-      ;; Print a message and ask the user to input the number of sources
-      print,''
-      print,'>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
-      read, these_sources, prompt='Enter number of sources and press ENTER (0: abort): '
-      n_fwdfit_sources = fix(these_sources)
-      if n_fwdfit_sources eq 0 then break
-      
-      ;; Then, the configuration is n_fwdfit_sources times circular gaussians
-      this_configuration_fwdfit = []
-      this_shape = 'circle'
-      if keyword_set(ellipse_shape) then this_shape = 'ellipse'
-      for i=0,n_fwdfit_sources-1 do this_configuration_fwdfit = [this_configuration_fwdfit, this_shape]
-    
-    endif else begin
-      ;; If the locations are known a priori, then
-      n_fwdfit_sources = n_elements(configuration_fwdfit)
-      this_configuration_fwdfit = configuration_fwdfit
-      if keyword_set(source_loc) or keyword_set(select_location) or keyword_set(select_box_location) then old_fixedpos = source_loc
-    endelse
-    
-    
-    ;;;;; If the user wants to select the location, loop on the number of locations to fix
-    if keyword_set(select_location) then begin
-      source_loc = fltarr(2,n_fwdfit_sources)
-
-      ;; Ask if the user wants to use the previously selected locations
-      use_the_same = 0
-      if old_nsources eq n_fwdfit_sources then begin
-        print,''
-        print,''
-        print,'Previously selected locations (columns: x and y): '
-        print, old_fixedpos
-        print,''
-        print,'>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
-        read, use_the_same, prompt='Do you want to use the same locations? (1: yes, 0: no): '
-      endif
-
-      ;; If yes, use the same then
-      if use_the_same eq 1 then begin
-        source_loc = old_fixedpos 
-        this_configuration_fwdfit = old_config_fwdfit
-
-      endif else begin
-        for ss=0,n_fwdfit_sources-1 do begin
-          print,''
-          print,'>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
-          print,'Select on the CLEAN map the location of the source '+strtrim(ss,2)+': '
-          xy, pos=tmp_pos
-
-          source_loc[*,ss] = [tmp_pos[0], tmp_pos[1]]
-        endfor
-        old_fixedpos = source_loc
-      endelse
-    endif
-    
-    
-    ;;;;; If the user wants to constrain the location, loop on the number of locations to constrain
-    box_or_fix = fltarr(n_fwdfit_sources)    ; if 0: BOX, if 1: FIXED
-    if keyword_set(select_box_location) then begin
-      box_location = fltarr(2,2,n_fwdfit_sources)   ; [bl or tr, x or y, number of sources]
-
-      ;; Ask if the user wants to use the previously selected boxes
-      use_the_same_box = 0
-      if old_nsources eq n_fwdfit_sources then begin
-        print,''
-        print,''
-        print,'Previously selected boxes (columns: bottom-left and top-right): '
-        print, old_boxes
-        print,''
-        print,'>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
-        read, use_the_same_box, prompt='Do you want to use the same boxes? (1: yes, 0: no): '
-      endif
-
-      ;; If yes, use the same then
-      if use_the_same_box eq 1 then begin
-        box_location = old_boxes
-        this_configuration_fwdfit = old_config_fwdfit
-        box_or_fix = all_box_or_fix[-n_fwdfit_sources:-1]
-
-      endif else begin
-        for ss=0,n_fwdfit_sources-1 do begin
-          print,''
-          print,'>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
-          print,'Select on the CLEAN map the bottom-left corner of the box '+strtrim(ss,2)+': '
-          print,'(if you select twice the same location, then it will be fixed!)'
-          xy, pos=tmp_bl
-          print,'Select on the CLEAN map the top-right corner of the box '+strtrim(ss,2)+': '
-          xy, pos=tmp_tr
-
-          box_location[0,*,ss] = [tmp_bl[0], tmp_bl[1]]
-          box_location[1,*,ss] = [tmp_tr[0], tmp_tr[1]]
-          threshold_fix = 2.
-          if abs(box_location[0,0,ss] - box_location[1,0,ss]) lt threshold_fix and abs(box_location[0,1,ss] - box_location[1,1,ss]) lt threshold_fix then begin
-            box_or_fix[ss] = 1
-            print,''
-            print,' --> The location of the source '+strtrim(ss,2)+' will be fixed!'
-            print,''
-            if keyword_set(ellipse_shape) then begin
-              this_configuration_fwdfit[ss] = 'circle'
-              print,''
-              print,' --> The source '+strtrim(ss,2)+' is now a circular Gaussian'
-              print,''
-            endif
-          endif
-        endfor
-        old_boxes = box_location
-      endelse
-    endif
-    
-    
-    ;;;;; Initialize the structure needed by fwdfit
-    srcin = VIS_FWDFIT_PSO_MULTIPLE_SRC_CREATE(vis, this_configuration_fwdfit)
-    
-    
-    ;;;;; If the source location has been fixed or selected, then fix it
-    ;; otherwise define the boundaries for the fwfit location (if specified)
-    if keyword_set(source_loc) then begin
-      counter_ellipses = 0
-      for this_circ = 0,n_fwdfit_sources-1 do begin
-        if this_configuration_fwdfit[this_circ] eq 'ellipse' then begin
-          srcin.ellipse[counter_ellipses].param_opt.param_x = source_loc[0,this_circ]
-          srcin.ellipse[counter_ellipses].param_opt.param_y = source_loc[1,this_circ]
-          counter_ellipses += 1
-        endif else begin
-          srcin.circle[this_circ-counter_ellipses].param_opt.param_x = source_loc[0,this_circ]
-          srcin.circle[this_circ-counter_ellipses].param_opt.param_y = source_loc[1,this_circ]
-        endelse
-        
-      endfor
-      all_fixedpos = [[all_fixedpos], [source_loc]]
-      
-    endif else if keyword_set(box_location) then begin
-      counter_ellipses = 0
-      for this_circ = 0,n_fwdfit_sources-1 do begin
-        ;;; if (x,y) bottom-left and top-right are equal (or below ~2 arcsec), 
-        ;;; then fix the location, if not, do boxes
-        threshold_fix = 2.
-        if abs(box_location[0,0,this_circ] - box_location[1,0,this_circ]) lt threshold_fix and abs(box_location[0,1,this_circ] - box_location[1,1,this_circ]) lt threshold_fix then begin
-          srcin.circle[this_circ-counter_ellipses].param_opt.param_x = box_location[0,0,this_circ]
-          srcin.circle[this_circ-counter_ellipses].param_opt.param_y = box_location[0,1,this_circ]
-        endif else begin
-          if this_configuration_fwdfit[this_circ] eq 'ellipse' then begin
-            srcin.ellipse[counter_ellipses].lower_bound.l_b_x = box_location[0,0,this_circ] - mapcenter[0]
-            srcin.ellipse[counter_ellipses].lower_bound.l_b_y = box_location[0,1,this_circ] - mapcenter[1]
-            srcin.ellipse[counter_ellipses].upper_bound.u_b_x = box_location[1,0,this_circ] - mapcenter[0]
-            srcin.ellipse[counter_ellipses].upper_bound.u_b_y = box_location[1,1,this_circ] - mapcenter[1]
-            counter_ellipses += 1
-          endif else begin
-            srcin.circle[this_circ-counter_ellipses].lower_bound.l_b_x = box_location[0,0,this_circ] - mapcenter[0]
-            srcin.circle[this_circ-counter_ellipses].lower_bound.l_b_y = box_location[0,1,this_circ] - mapcenter[1]
-            srcin.circle[this_circ-counter_ellipses].upper_bound.u_b_x = box_location[1,0,this_circ] - mapcenter[0]
-            srcin.circle[this_circ-counter_ellipses].upper_bound.u_b_y = box_location[1,1,this_circ] - mapcenter[1]
-          endelse
-          
-        endelse
-        
-      endfor
-      all_boxes = [[[all_boxes]], [[box_location]]]
-    endif
-    
-    
-    ;;;;; If the user pre-defined the source fwhm, then fix it
-    if keyword_set(source_fwhm) then begin
-      for this_circ = 0,n_fwdfit_sources-1 do begin
-        if n_elements(source_fwhm) eq 1 then begin 
-          srcin.circle[this_circ].param_opt.param_fwhm = source_fwhm 
-        endif else begin
-          srcin.circle[this_circ].param_opt.param_fwhm = source_fwhm[this_circ]
-        endelse
-        
-      endfor
-      all_fixedfwhm = [all_fixedfwhm, source_fwhm]
-    endif
-    
-    
-    ;;;;; If the user pre-defined the min fwhm of the source, then set it
-    if keyword_set(min_fwhm) then begin
-      counter_ellipses = 0
-      for this_circ = 0,n_fwdfit_sources-1 do begin
-        if n_elements(min_fwhm) eq 1 then begin
-          if this_configuration_fwdfit[this_circ] eq 'ellipse' then begin
-            srcin.ellipse[counter_ellipses].lower_bound.l_b_fwhm = min_fwhm
-            counter_ellipses += 1
-          endif else begin
-            srcin.circle[this_circ-counter_ellipses].lower_bound.l_b_fwhm = min_fwhm
-          endelse
-           
-        endif else begin
-          if this_configuration_fwdfit[this_circ] eq 'ellipse' then begin
-            srcin.ellipse[counter_ellipses].lower_bound.l_b_fwhm = min_fwhm[this_circ]
-            counter_ellipses += 1
-          endif else begin
-            srcin.circle[this_circ-counter_ellipses].lower_bound.l_b_fwhm = min_fwhm[this_circ-counter_ellipses]
-          endelse
-          
-        endelse
-        
-      endfor
-      all_minfwhm = [all_minfwhm, min_fwhm]
-    endif
-    
-    
-    ;;;;; If the user pre-defined the max fwhm of the source, then set it
-    if keyword_set(max_fwhm) then begin
-      for this_circ = 0,n_fwdfit_sources-1 do begin
-        if n_elements(max_fwhm) eq 1 then srcin.circle[this_circ].upper_bound.u_b_fwhm = max_fwhm else srcin.circle[this_circ].upper_bound.u_b_fwhm = max_fwhm[this_circ]
-      endfor
-      all_maxfwhm = [all_maxfwhm, max_fwhm]
-    endif
-    
-    
-    ;;;;; Create a copy for the sve-file
-    srcin_fwdfit = srcin
+    if not keyword_set(no_mem_ge) then plot_map,memge_map,/over,/perc,levels=[30,50],color=cgcolor('cyan'),thick=2
+    if not keyword_set(no_mem_ge) then xyouts,0.74,0.81,'[30,50]%',/normal,charsize=ch_sz,chart=2.2,color=cgcolor('cyan')
     
     
     ;;;;; FWDFIT
-    fwdfit_map = stx_vis_fwdfit_pso(this_configuration_fwdfit,vis,aux_data,srcin=srcin,imsize=imsize,$
-      pixel=pixel,srcstr=out_param_fwdfit,fitsigmas=out_sigma_fwdfit,uncertainty=uncertainty,redchisq=chi2_fwdfit)
+    if not keyword_set(no_fwdfit) then begin
+      ;;;;; If configuration_fwdfit is not set, then select the number of sources
+      if not keyword_set(configuration_fwdfit) then begin
+        ;; Plot CLEAN again to select the sources on the screen
+        loadct,5,/silent
+        !p.multi = 0
+        window,12,xsize=1300,ysize=1300;,xpos=2300
+        plot_map,clean_map[4],/limb,grid=grid,chars=ch_sz
+        plot_map,clean_map[4],/over,/perc,levels=[30,50],color=cgcolor('cyan'),thick=2
+        ;plot_map,clean_map[4],/over,levels=[max(clean_map[2].data)],color=cgcolor('dark green'),thick=2
+        ;xyouts,0.21,0.75,'Peak residual',/normal,charsize=ch_sz,chart=2.2,color=cgcolor('dark green')
+        xyouts,0.21,0.8,'[30,50]%',/normal,charsize=ch_sz,chart=2.2,color=cgcolor('cyan')
+
+        ;; Overplot the center of the previously selected sources
+        if old_nsources gt 0 and keyword_set(source_loc) then begin
+          for i=0,n_elements(all_fixedpos[0,*])-1 do plots,all_fixedpos[0,i],all_fixedpos[1,i],/data,psym=1,syms=5,color=cgcolor('Slate Gray'),thick=3
+          for i=0,n_elements(old_fixedpos[0,*])-1 do plots,old_fixedpos[0,i],old_fixedpos[1,i],/data,psym=1,syms=5,color=cgcolor('magenta'),thick=5
+          xyouts,0.21,0.77,'All previously selected locations',/normal,charsize=ch_sz,chart=2.2,color=cgcolor('Slate Gray')
+          xyouts,0.21,0.74,'Latest selected locations',/normal,charsize=ch_sz,chart=2.2,color=cgcolor('magenta')
+        endif
+
+        ;; Overplot the previously selected boxes
+        if old_nsources gt 0 and keyword_set(box_location) then begin
+          plot_boxes, all_boxes, all_box_or_fix
+          plot_boxes, old_boxes, box_or_fix, color='magenta'
+          xyouts,0.21,0.77,'All previously selected boxes',/normal,charsize=ch_sz,chart=2.2,color=cgcolor('Slate Gray')
+          xyouts,0.21,0.74,'Latest selected boxes',/normal,charsize=ch_sz,chart=2.2,color=cgcolor('magenta')
+        endif
+
+        ;; Print a message and ask the user to input the number of sources
+        print,''
+        print,'>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
+        read, these_sources, prompt='Enter number of sources and press ENTER (0: abort): '
+        n_fwdfit_sources = fix(these_sources)
+        if n_fwdfit_sources eq 0 then break
+
+        ;; Then, the configuration is n_fwdfit_sources times circular gaussians
+        this_configuration_fwdfit = []
+        this_shape = 'circle'
+        if keyword_set(ellipse_shape) then this_shape = 'ellipse'
+        for i=0,n_fwdfit_sources-1 do this_configuration_fwdfit = [this_configuration_fwdfit, this_shape]
+
+      endif else begin
+        ;; If the locations are known a priori, then
+        n_fwdfit_sources = n_elements(configuration_fwdfit)
+        this_configuration_fwdfit = configuration_fwdfit
+        if keyword_set(source_loc) or keyword_set(select_location) or keyword_set(select_box_location) then old_fixedpos = source_loc
+      endelse
 
 
-    ;;;;; Do visibility subtraction: observed visibilities - predicted visibilities by fwdfit
-    vis_diff = vis
-    vis_diff.obsvis = vis.obsvis - 1 * fwdfit_map.pred_vis.mapvis
+      ;;;;; If the user wants to select the location, loop on the number of locations to fix
+      if keyword_set(select_location) then begin
+        source_loc = fltarr(2,n_fwdfit_sources)
+
+        ;; Ask if the user wants to use the previously selected locations
+        use_the_same = 0
+        if old_nsources eq n_fwdfit_sources then begin
+          print,''
+          print,''
+          print,'Previously selected locations (columns: x and y): '
+          print, old_fixedpos
+          print,''
+          print,'>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
+          read, use_the_same, prompt='Do you want to use the same locations? (1: yes, 0: no): '
+        endif
+
+        ;; If yes, use the same then
+        if use_the_same eq 1 then begin
+          source_loc = old_fixedpos
+          this_configuration_fwdfit = old_config_fwdfit
+
+        endif else begin
+          for ss=0,n_fwdfit_sources-1 do begin
+            print,''
+            print,'>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
+            print,'Select on the CLEAN map the location of the source '+strtrim(ss,2)+': '
+            xy, pos=tmp_pos
+
+            source_loc[*,ss] = [tmp_pos[0], tmp_pos[1]]
+          endfor
+          old_fixedpos = source_loc
+        endelse
+      endif
 
 
-    ;;;;; Create the BPROJ map out of the subtracted visibilities
-    bp_diff_map = stx_bproj(vis_diff, imsize, pixel, aux_data)
-    bp_diff_map.id = 'STX BPROJ (diff): '
+      ;;;;; If the user wants to constrain the location, loop on the number of locations to constrain
+      box_or_fix = fltarr(n_fwdfit_sources)    ; if 0: BOX, if 1: FIXED
+      if keyword_set(select_box_location) then begin
+        box_location = fltarr(2,2,n_fwdfit_sources)   ; [bl or tr, x or y, number of sources]
+
+        ;; Ask if the user wants to use the previously selected boxes
+        use_the_same_box = 0
+        if old_nsources eq n_fwdfit_sources then begin
+          print,''
+          print,''
+          print,'Previously selected boxes (columns: bottom-left and top-right): '
+          print, old_boxes
+          print,''
+          print,'>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
+          read, use_the_same_box, prompt='Do you want to use the same boxes? (1: yes, 0: no): '
+        endif
+
+        ;; If yes, use the same then
+        if use_the_same_box eq 1 then begin
+          box_location = old_boxes
+          this_configuration_fwdfit = old_config_fwdfit
+          box_or_fix = all_box_or_fix[-n_fwdfit_sources:-1]
+
+        endif else begin
+          for ss=0,n_fwdfit_sources-1 do begin
+            print,''
+            print,'>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
+            print,'Select on the CLEAN map the bottom-left corner of the box '+strtrim(ss,2)+': '
+            print,'(if you select twice the same location, then it will be fixed!)'
+            xy, pos=tmp_bl
+            print,'Select on the CLEAN map the top-right corner of the box '+strtrim(ss,2)+': '
+            xy, pos=tmp_tr
+
+            box_location[0,*,ss] = [tmp_bl[0], tmp_bl[1]]
+            box_location[1,*,ss] = [tmp_tr[0], tmp_tr[1]]
+            threshold_fix = 2.
+            if abs(box_location[0,0,ss] - box_location[1,0,ss]) lt threshold_fix and abs(box_location[0,1,ss] - box_location[1,1,ss]) lt threshold_fix then begin
+              box_or_fix[ss] = 1
+              print,''
+              print,' --> The location of the source '+strtrim(ss,2)+' will be fixed!'
+              print,''
+              if keyword_set(ellipse_shape) then begin
+                this_configuration_fwdfit[ss] = 'circle'
+                print,''
+                print,' --> The source '+strtrim(ss,2)+' is now a circular Gaussian'
+                print,''
+              endif
+            endif
+          endfor
+          old_boxes = box_location
+        endelse
+      endif
 
 
-    ;;;;; Plot visibility amplitude and phase
-    stx_plot_fit_map, fwdfit_map
+      ;;;;; Initialize the structure needed by fwdfit
+      srcin = VIS_FWDFIT_PSO_MULTIPLE_SRC_CREATE(vis, this_configuration_fwdfit)
+
+
+      ;;;;; If the source location has been fixed or selected, then fix it
+      ;; otherwise define the boundaries for the fwfit location (if specified)
+      if keyword_set(source_loc) then begin
+        counter_ellipses = 0
+        for this_circ = 0,n_fwdfit_sources-1 do begin
+          if this_configuration_fwdfit[this_circ] eq 'ellipse' then begin
+            srcin.ellipse[counter_ellipses].param_opt.param_x = source_loc[0,this_circ]
+            srcin.ellipse[counter_ellipses].param_opt.param_y = source_loc[1,this_circ]
+            counter_ellipses += 1
+          endif else begin
+            srcin.circle[this_circ-counter_ellipses].param_opt.param_x = source_loc[0,this_circ]
+            srcin.circle[this_circ-counter_ellipses].param_opt.param_y = source_loc[1,this_circ]
+          endelse
+
+        endfor
+        all_fixedpos = [[all_fixedpos], [source_loc]]
+
+      endif else if keyword_set(box_location) then begin
+        counter_ellipses = 0
+        for this_circ = 0,n_fwdfit_sources-1 do begin
+          ;;; if (x,y) bottom-left and top-right are equal (or below ~2 arcsec),
+          ;;; then fix the location, if not, do boxes
+          threshold_fix = 2.
+          if abs(box_location[0,0,this_circ] - box_location[1,0,this_circ]) lt threshold_fix and abs(box_location[0,1,this_circ] - box_location[1,1,this_circ]) lt threshold_fix then begin
+            srcin.circle[this_circ-counter_ellipses].param_opt.param_x = box_location[0,0,this_circ]
+            srcin.circle[this_circ-counter_ellipses].param_opt.param_y = box_location[0,1,this_circ]
+          endif else begin
+            if this_configuration_fwdfit[this_circ] eq 'ellipse' then begin
+              srcin.ellipse[counter_ellipses].lower_bound.l_b_x = box_location[0,0,this_circ] - mapcenter[0]
+              srcin.ellipse[counter_ellipses].lower_bound.l_b_y = box_location[0,1,this_circ] - mapcenter[1]
+              srcin.ellipse[counter_ellipses].upper_bound.u_b_x = box_location[1,0,this_circ] - mapcenter[0]
+              srcin.ellipse[counter_ellipses].upper_bound.u_b_y = box_location[1,1,this_circ] - mapcenter[1]
+              counter_ellipses += 1
+            endif else begin
+              srcin.circle[this_circ-counter_ellipses].lower_bound.l_b_x = box_location[0,0,this_circ] - mapcenter[0]
+              srcin.circle[this_circ-counter_ellipses].lower_bound.l_b_y = box_location[0,1,this_circ] - mapcenter[1]
+              srcin.circle[this_circ-counter_ellipses].upper_bound.u_b_x = box_location[1,0,this_circ] - mapcenter[0]
+              srcin.circle[this_circ-counter_ellipses].upper_bound.u_b_y = box_location[1,1,this_circ] - mapcenter[1]
+            endelse
+
+          endelse
+
+        endfor
+        all_boxes = [[[all_boxes]], [[box_location]]]
+      endif
+
+
+      ;;;;; If the user pre-defined the source fwhm, then fix it
+      if keyword_set(source_fwhm) then begin
+        for this_circ = 0,n_fwdfit_sources-1 do begin
+          if n_elements(source_fwhm) eq 1 then begin
+            srcin.circle[this_circ].param_opt.param_fwhm = source_fwhm
+          endif else begin
+            srcin.circle[this_circ].param_opt.param_fwhm = source_fwhm[this_circ]
+          endelse
+
+        endfor
+        all_fixedfwhm = [all_fixedfwhm, source_fwhm]
+      endif
+
+
+      ;;;;; If the user pre-defined the min fwhm of the source, then set it
+      if keyword_set(min_fwhm) then begin
+        counter_ellipses = 0
+        for this_circ = 0,n_fwdfit_sources-1 do begin
+          if n_elements(min_fwhm) eq 1 then begin
+            if this_configuration_fwdfit[this_circ] eq 'ellipse' then begin
+              srcin.ellipse[counter_ellipses].lower_bound.l_b_fwhm = min_fwhm
+              counter_ellipses += 1
+            endif else begin
+              srcin.circle[this_circ-counter_ellipses].lower_bound.l_b_fwhm = min_fwhm
+            endelse
+
+          endif else begin
+            if this_configuration_fwdfit[this_circ] eq 'ellipse' then begin
+              srcin.ellipse[counter_ellipses].lower_bound.l_b_fwhm = min_fwhm[this_circ]
+              counter_ellipses += 1
+            endif else begin
+              srcin.circle[this_circ-counter_ellipses].lower_bound.l_b_fwhm = min_fwhm[this_circ-counter_ellipses]
+            endelse
+
+          endelse
+
+        endfor
+        all_minfwhm = [all_minfwhm, min_fwhm]
+      endif
+
+
+      ;;;;; If the user pre-defined the max fwhm of the source, then set it
+      if keyword_set(max_fwhm) then begin
+        for this_circ = 0,n_fwdfit_sources-1 do begin
+          if n_elements(max_fwhm) eq 1 then srcin.circle[this_circ].upper_bound.u_b_fwhm = max_fwhm else srcin.circle[this_circ].upper_bound.u_b_fwhm = max_fwhm[this_circ]
+        endfor
+        all_maxfwhm = [all_maxfwhm, max_fwhm]
+      endif
+
+
+      ;;;;; Create a copy for the sve-file
+      srcin_fwdfit = srcin
+
+
+      ;;;;; FWDFIT
+      fwdfit_map = stx_vis_fwdfit_pso(this_configuration_fwdfit,vis,aux_data,srcin=srcin,imsize=imsize,$
+        pixel=pixel,srcstr=out_param_fwdfit,fitsigmas=out_sigma_fwdfit,uncertainty=uncertainty,redchisq=chi2_fwdfit)
+
+
+      ;;;;; Do visibility subtraction: observed visibilities - predicted visibilities by fwdfit
+      vis_diff = vis
+      vis_diff.obsvis = vis.obsvis - 1 * fwdfit_map.pred_vis.mapvis
+
+
+      ;;;;; Create the BPROJ map out of the subtracted visibilities
+      bp_diff_map = stx_bproj(vis_diff, imsize, pixel, aux_data)
+      bp_diff_map.id = 'STX BPROJ (diff): '
+
+
+      ;;;;; Plot visibility amplitude and phase
+      stx_plot_fit_map, fwdfit_map
+    
+    endif else begin
+      ;; Define an empty FWDFIT
+      fwdfit_map = bp_map
+      fwdfit_map.data *= 0.
+      fwdfit_map.data += 1d-10
+      fwdfit_map.id    = '/no_fwdfit set'
+
+      ;; Define an empty map for the subtracted vis
+      bp_diff_map = bp_map
+      bp_diff_map.data *= 0.
+      bp_diff_map.data += 1d-10
+      bp_diff_map.id    = '/no_fwdfit set'
+    endelse
+    
 
 
     ;;;;; Prepare some text for plots and save files
@@ -764,24 +812,24 @@ pro stx_imaging_spectroscopy, path_sci_file, path_bkg_file, aux_fits_file, time_
     !p.multi=[0,3,2]
     loadct,5,/sil
     plot_map,clean_map[0],/limb,grid=grid,chars=ch_sz,title=title_clean
-    if keyword_set(source_loc) then for i=0,n_elements(old_fixedpos[0,*])-1 do plots,old_fixedpos[0,i],old_fixedpos[1,i],/data,psym=1,syms=3,color=cgcolor('slate gray'),thick=3
-    if keyword_set(box_location) then plot_boxes, box_location, box_or_fix
+    if keyword_set(source_loc) and not keyword_set(no_clean) and not keyword_set(no_fwdfit) then for i=0,n_elements(old_fixedpos[0,*])-1 do plots,old_fixedpos[0,i],old_fixedpos[1,i],/data,psym=1,syms=3,color=cgcolor('slate gray'),thick=3
+    if keyword_set(box_location) and not keyword_set(no_clean) and not keyword_set(no_fwdfit) then plot_boxes, box_location, box_or_fix
     loadct,5,/sil
     plot_map,memge_map,/limb,grid=grid,chars=ch_sz,title=title_mem
-    if keyword_set(source_loc) then for i=0,n_elements(old_fixedpos[0,*])-1 do plots,old_fixedpos[0,i],old_fixedpos[1,i],/data,psym=1,syms=3,color=cgcolor('slate gray'),thick=3
-    if keyword_set(box_location) then plot_boxes, box_location, box_or_fix
+    if keyword_set(source_loc) and not keyword_set(no_mem_ge) and not keyword_set(no_fwdfit) then for i=0,n_elements(old_fixedpos[0,*])-1 do plots,old_fixedpos[0,i],old_fixedpos[1,i],/data,psym=1,syms=3,color=cgcolor('slate gray'),thick=3
+    if keyword_set(box_location) and not keyword_set(no_mem_ge) and not keyword_set(no_fwdfit) then plot_boxes, box_location, box_or_fix
     loadct,5,/sil
     plot_map,fwdfit_map,/limb,grid=grid,chars=ch_sz
-    if keyword_set(source_loc) then for i=0,n_elements(old_fixedpos[0,*])-1 do plots,old_fixedpos[0,i],old_fixedpos[1,i],/data,psym=1,syms=3,color=cgcolor('slate gray'),thick=3
-    if keyword_set(box_location) then plot_boxes, box_location, box_or_fix
+    if keyword_set(source_loc) and not keyword_set(no_fwdfit) then for i=0,n_elements(old_fixedpos[0,*])-1 do plots,old_fixedpos[0,i],old_fixedpos[1,i],/data,psym=1,syms=3,color=cgcolor('slate gray'),thick=3
+    if keyword_set(box_location) and not keyword_set(no_fwdfit) then plot_boxes, box_location, box_or_fix
     loadct,5,/sil
     plot_map,bp_map,/limb,grid=grid,chars=ch_sz
-    if keyword_set(source_loc) then for i=0,n_elements(old_fixedpos[0,*])-1 do plots,old_fixedpos[0,i],old_fixedpos[1,i],/data,psym=1,syms=3,color=cgcolor('slate gray'),thick=3
-    if keyword_set(box_location) then plot_boxes, box_location, box_or_fix
+    if keyword_set(source_loc) and not keyword_set(no_fwdfit) then for i=0,n_elements(old_fixedpos[0,*])-1 do plots,old_fixedpos[0,i],old_fixedpos[1,i],/data,psym=1,syms=3,color=cgcolor('slate gray'),thick=3
+    if keyword_set(box_location) and not keyword_set(no_fwdfit) then plot_boxes, box_location, box_or_fix
     loadct,5,/sil
     plot_map,bp_diff_map,/limb,grid=grid,chars=ch_sz,dmax=max(bp_map.data)
-    if keyword_set(source_loc) then for i=0,n_elements(old_fixedpos[0,*])-1 do plots,old_fixedpos[0,i],old_fixedpos[1,i],/data,psym=1,syms=3,color=cgcolor('slate gray'),thick=3
-    if keyword_set(box_location) then plot_boxes, box_location, box_or_fix
+    if keyword_set(source_loc) and not keyword_set(no_fwdfit) then for i=0,n_elements(old_fixedpos[0,*])-1 do plots,old_fixedpos[0,i],old_fixedpos[1,i],/data,psym=1,syms=3,color=cgcolor('slate gray'),thick=3
+    if keyword_set(box_location) and not keyword_set(no_fwdfit) then plot_boxes, box_location, box_or_fix
     plot_map,bp_map,/nodata
 
     ;; Print some useful text
@@ -791,20 +839,20 @@ pro stx_imaging_spectroscopy, path_sci_file, path_bkg_file, aux_fits_file, time_
     dyy = dy / 2
 
     if path_bkg_file eq '' then txt_counts = 'Tot counts: ' else txt_counts = 'Tot counts (bk sub): '
-    txt_chi2 = num2str(chi2_fwdfit,format='(F10.2)')
-    txt_nsrc = num2str(n_fwdfit_sources,format='(I10.0)')
+    if not keyword_set(no_fwdfit) then txt_chi2 = num2str(chi2_fwdfit,format='(F10.2)')
+    if not keyword_set(no_fwdfit) then txt_nsrc = num2str(n_fwdfit_sources,format='(I10.0)')
     if keyword_set(source_loc) then txt_pos = 'fixed' else txt_pos = 'free'
     if keyword_set(box_location) then txt_pos = 'constrained'
-    if total(box_or_fix) gt 0 then txt_pos = 'mix'
+    if not keyword_set(no_fwdfit) then if total(box_or_fix) gt 0 then txt_pos = 'mix'
     if keyword_set(min_fwhm) or keyword_set(max_fwhm) then txt_fwhm = 'constrained' else txt_fwhm = 'free'
     if keyword_set(source_fwhm) then txt_fwhm = 'fixed'
 
     xyouts,xstart,ystart,'Energy range: '+text_erange+' keV',/norm,chars=ch_sz,chart=th_sz_txt
     xyouts,xstart,ystart-dy,txt_counts+num2str(ncounts,format='(I10.0)'),/norm,chars=ch_sz,chart=th_sz_txt
-    xyouts,xstart,ystart-2*dy,'Tot fwdfit sources: '+txt_nsrc,/norm,chars=ch_sz,chart=th_sz_txt
-    xyouts,xstart,ystart-2*dy-dyy,'Reduced chisq fwdfit: '+txt_chi2,/norm,chars=ch_sz,chart=th_sz_txt
-    xyouts,xstart,ystart-3*dy-dyy,'fwdfit position:  '+txt_pos,/norm,chars=ch_sz,chart=th_sz_txt
-    xyouts,xstart,ystart-3*dy-2*dyy,'fwdfit FWHM:    '+txt_fwhm,/norm,chars=ch_sz,chart=th_sz_txt
+    if not keyword_set(no_fwdfit) then xyouts,xstart,ystart-2*dy,'Tot fwdfit sources: '+txt_nsrc,/norm,chars=ch_sz,chart=th_sz_txt
+    if not keyword_set(no_fwdfit) then xyouts,xstart,ystart-2*dy-dyy,'Reduced chisq fwdfit: '+txt_chi2,/norm,chars=ch_sz,chart=th_sz_txt
+    if not keyword_set(no_fwdfit) then xyouts,xstart,ystart-3*dy-dyy,'fwdfit position:  '+txt_pos,/norm,chars=ch_sz,chart=th_sz_txt
+    if not keyword_set(no_fwdfit) then xyouts,xstart,ystart-3*dy-2*dyy,'fwdfit FWHM:    '+txt_fwhm,/norm,chars=ch_sz,chart=th_sz_txt
     xyouts,xstart,ystart-6*dy,vis_type,/norm,chars=ch_sz,chart=th_sz_txt
 
     if keyword_set(stop_here) then stop
@@ -835,16 +883,23 @@ pro stx_imaging_spectroscopy, path_sci_file, path_bkg_file, aux_fits_file, time_
     
     
     ;;;;; Store some values for the next loop-step
-    old_nsources = n_fwdfit_sources
-    old_config_fwdfit = this_configuration_fwdfit
-    all_box_or_fix = [all_box_or_fix, box_or_fix]
+    if not keyword_set(no_fwdfit) then begin
+      old_nsources = n_fwdfit_sources
+      old_config_fwdfit = this_configuration_fwdfit
+      all_box_or_fix = [all_box_or_fix, box_or_fix]
+    endif else begin
+      old_nsources = 0
+      old_config_fwdfit = 0
+      all_box_or_fix = 0
+    endelse
+    
     
     
   endfor
   
   
   ;; Plot CLEAN again to show all selected locations
-  if keyword_set(source_loc) then begin
+  if keyword_set(source_loc) and not keyword_set(no_clean) then begin
     loadct,5,/silent
     !p.multi = 0
     window,12,xsize=1300,ysize=1300;,xpos=2300

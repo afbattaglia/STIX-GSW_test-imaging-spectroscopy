@@ -27,30 +27,6 @@
 ;   path_bkg_file      : path to the background fits file.
 ;                        It has to be the same as the background used for imaging
 ;
-; OPTIONAL OUTPUTS:
-;   flux_str           : structure containing the fluxes of the different sources.
-;                        We note that obs stands for the spatially integrated spectrum
-;                        and ff stands for the fwdfit (imaging) spectrum.
-;                        It contains the following keywords:
-;                          flux_str = {$
-;                                  info            : 'Struct with fwdfit fluxes', $
-;                                  readme          : readme, $
-;                                  units           : 'cnts/s/keV/cm^2', $
-;                                  obs             : observed_spectrum, $
-;                                  obs_err         : observed_spectrum_error, $
-;                                  ff_tot          : total_fwdfit_flux, $
-;                                  ff_tot_err      : total_fwdfit_flux_err, $
-;                                  ff_sources      : ff_src, $
-;                                  ff_sources_err  : ff_src_err, $
-;                                  e_min           : all_energy_ranges[0,*], $
-;                                  e_max           : all_energy_ranges[1,*], $
-;                                  time_range      : this_time_range, $
-;                                  time_shift      : this_time_shift, $
-;                                  det_area        : det_area, $
-;                                  srm             : srm}
-;
-;   ospex_obj          : ospex object containing the spatially integrated spectrum
-;
 ; OPTIONAL INPUTS AND KEYWORDS:
 ;   color_srcs         : array of colors for the different sources
 ;                        default: ['red', 'blue', 'orange', 'magenta', 'dark green', 'cyan', 'saddle brown', 'goldenrod']
@@ -72,10 +48,7 @@ pro stx_plot_imaging_spectra, path_data_folder, path_sci_file, path_bkg_file, $ 
   ;; --- Optional inputs and keywords
   color_srcs = color_srcs, $      
   observed_color = observed_color, $
-  stop_here = stop_here, $
-  ;; --- Optional output
-  flux_str = flux_str, $
-  ospex_obj = ospex_obj
+  stop_here = stop_here
   
 
 
@@ -398,10 +371,6 @@ pro stx_plot_imaging_spectra, path_data_folder, path_sci_file, path_bkg_file, $ 
     observed_bk_spectrum = [observed_bk_spectrum, mean(tmp_observed_bk[ile:ihe])]
     observed_bk_spectrum_error = [observed_bk_spectrum_error, mean(tmp_observed_bk_error[ile:ihe])]
   end
-  ;;**********************
-  ;; Test (to be deleted in the official sw!!)
-  ;observed_spectrum += observed_spectrum*0.1
-  ;;**********************
   observed_spectrum_plot = [observed_spectrum[0], observed_spectrum, observed_spectrum[-1]]
   observed_bk_spectrum_plot = [observed_bk_spectrum[0], observed_bk_spectrum, observed_bk_spectrum[-1]]
   e_axis_ospex = (e_min_ospex_axis + e_max_ospex_axis) / 2
@@ -590,42 +559,67 @@ pro stx_plot_imaging_spectra, path_data_folder, path_sci_file, path_bkg_file, $ 
   
   set_logenv, 'OSPEX_NOINTERACTIVE', '0'
   
-  ;;;;; Restore the SRM IDL file
-  path_srm_save = findfile('stx_srm*IDL-save.sav')
-  restore,path_srm_save,/ver
-  
-  cd,this_wd
-  
-  ;;;;; Store the fwdfit fluxes and the observed spectrum in a save file
-
-  ;;;;; Create the output structure and save it in a save file
-  total_fwdfit_flux = total_flux_fwdfit
-  total_fwdfit_flux_err = total_flux_fwdfit_err
-  readme = 'fwdfit flux already scaled to 1 AU'
-  flnm_fluxes = path_data_folder + 'fwdfit-and-observed-spectra.sav'
-  
-  ff_src = all_fwdfit_fluxes
-  ff_src_err = all_fwdfit_err_fluxes
-  
-  flux_str = {$
-    info            : 'Struct with fwdfit fluxes', $
-    readme          : readme, $
-    units           : 'cnts/s/keV/cm^2', $
-    obs             : observed_spectrum, $
-    obs_err         : observed_spectrum_error, $
-    ff_tot          : total_fwdfit_flux, $
-    ff_tot_err      : total_fwdfit_flux_err, $
-    ff_sources      : ff_src, $
-    ff_sources_err  : ff_src_err, $
-    e_min           : all_energy_ranges[0,*], $
-    e_max           : all_energy_ranges[1,*], $
-    time_range      : this_time_range, $
-    time_shift      : this_time_shift, $
-    det_area        : det_area, $
-    srm             : srm}
-  
-  save,filename=flnm_fluxes,flux_str,e_axis_ospex,residuals,perc_diff,observed_bk_spectrum,$
-    observed_bk_spectrum_error;,total_clean_flux,total_mem_flux
+;  ;;;;; Restore the SRM IDL file
+;  path_srm_save = findfile('stx_srm*IDL-save.sav')
+;  restore,path_srm_save,/ver
+;  
+;  cd,this_wd
+;  
+;  ;;;;; Store the fwdfit fluxes and the observed spectrum in a save file
+;
+;  ;;;;; Create the output structure and save it in a save file
+;  total_fwdfit_flux = total_flux_fwdfit
+;  total_fwdfit_flux_err = total_flux_fwdfit_err
+;  readme = 'fwdfit flux already scaled to 1 AU'
+;  flnm_fluxes = path_data_folder + 'fwdfit-and-observed-spectra.sav'
+;  
+;  ff_src = all_fwdfit_fluxes
+;  ff_src_err = all_fwdfit_err_fluxes
+;  
+;  flux_str = {$
+;    info            : 'Struct with fwdfit fluxes', $
+;    readme          : readme, $
+;    units           : 'cnts/s/keV/cm^2', $
+;    obs             : observed_spectrum, $
+;    obs_err         : observed_spectrum_error, $
+;    ff_tot          : total_fwdfit_flux, $
+;    ff_tot_err      : total_fwdfit_flux_err, $
+;    ff_sources      : ff_src, $
+;    ff_sources_err  : ff_src_err, $
+;    e_min           : all_energy_ranges[0,*], $
+;    e_max           : all_energy_ranges[1,*], $
+;    time_range      : this_time_range, $
+;    time_shift      : this_time_shift, $
+;    det_area        : det_area, $
+;    srm             : srm}
+;  
+;  save,filename=flnm_fluxes,flux_str,e_axis_ospex,residuals,perc_diff,observed_bk_spectrum,$
+;    observed_bk_spectrum_error;,total_clean_flux,total_mem_flux
+;
+;
+; OPTIONAL OUTPUTS:
+;   flux_str           : structure containing the fluxes of the different sources.
+;                        We note that obs stands for the spatially integrated spectrum
+;                        and ff stands for the fwdfit (imaging) spectrum.
+;                        It contains the following keywords:
+;                          flux_str = {$
+;                                  info            : 'Struct with fwdfit fluxes', $
+;                                  readme          : readme, $
+;                                  units           : 'cnts/s/keV/cm^2', $
+;                                  obs             : observed_spectrum, $
+;                                  obs_err         : observed_spectrum_error, $
+;                                  ff_tot          : total_fwdfit_flux, $
+;                                  ff_tot_err      : total_fwdfit_flux_err, $
+;                                  ff_sources      : ff_src, $
+;                                  ff_sources_err  : ff_src_err, $
+;                                  e_min           : all_energy_ranges[0,*], $
+;                                  e_max           : all_energy_ranges[1,*], $
+;                                  time_range      : this_time_range, $
+;                                  time_shift      : this_time_shift, $
+;                                  det_area        : det_area, $
+;                                  srm             : srm}
+;
+;   ospex_obj          : ospex object containing the spatially integrated spectrum
   
 
   if keyword_set(stop_here) then stop
