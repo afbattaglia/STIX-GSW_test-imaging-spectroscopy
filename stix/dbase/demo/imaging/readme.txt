@@ -1,2 +1,0 @@
-This folder will contain the data FITS files needed to run the Imaging demonstration script stx_imaging_demo.pro. 
-The folder will usually be empty on initial installation of the STIX software with the files downloaded when the demo is run. 
