@@ -294,8 +294,8 @@ pro stx_plot_imaging_spectra, path_data_folder, path_sci_file, path_bkg_file, $ 
     time_shift = time_shift, $
     flare_location = xy_flare_stix, $
     ospex_obj = ospex_obj, $
-    background_data = background_data, $
-    /sav_srm ; --> this keyword is not officially implemented!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    background_data = background_data;, $
+    ;/sav_srm ; --> this keyword is not officially implemented!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  
   wdelete
  
