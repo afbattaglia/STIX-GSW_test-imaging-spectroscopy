@@ -857,6 +857,58 @@ pro stx_imaging_spectroscopy, path_sci_file, path_bkg_file, aux_fits_file, time_
 
     if keyword_set(stop_here) then stop
     
+    ;correct for regularized map structures (need to have 24 visibilities saved in the map structure)
+    if not keyword_set(observed_vis) then begin
+      det_label = ['10a','10b','10c','9a','9b','9c','8a','8b','8c','7a','7b','7c','6a','6b','6c','5a','5b','5c','4a','4b','4c','3a','3b','3c']
+      det_num = [3,20,22,16,14,32,21,26,4,24,8,28,15,27,31,6,30,2,25,5,23,7,29,1,12,19,17,11,13,18]
+      
+      if n_elements(vis) NE 24 then begin
+        ;find the missing detectors
+        missing_det = []
+        missing_det_num = []
+        vis_label = []
+        for pos_vis=0,n_elements(vis)-1 do begin
+          vis_label = [vis_label, vis[pos_vis].label]
+        endfor
+        for this_label = 0,23 do begin
+          test_label = where(vis_label EQ det_label[this_label])
+          if test_label EQ (-1) then missing_det = [missing_det, det_label[this_label]]
+          if test_label EQ (-1) then missing_det_num = [missing_det_num, det_num[this_label]]
+        endfor
+        
+        ;adding the missing visibility structures (with zero values)
+        for num_missing=0,n_elements(missing_det)-1 do begin
+          vis_missing = stx_vis_converter(vis[0].energy_range[0], vis[0].energy_range[1], 0.0, 0.0, 0.0, 0.0, 0.0, vis[0].time_range, $
+            vis[0].xyoffset, missing_det_num[num_missing], missing_det[num_missing])
+
+          pos = where(missing_det[num_missing] EQ det_label)
+          new_vis = []
+          if pos NE 0 then begin
+            for i=0,pos[0]-1 do new_vis = [new_vis,vis[i]]
+          endif
+          new_vis = [new_vis, vis_missing]
+          if pos NE n_elements(vis) then begin
+            for i=pos[0]+1,n_elements(vis) do new_vis = [new_vis,vis[i-1]]
+          endif
+          vis = new_vis
+        endfor
+        
+        if not keyword_set(no_mem_ge) then memge_map_new = stx_imaspec_adapt_map(memge_map, vis, pixel)
+        if not keyword_set(no_clean) then begin
+          clean_map_new = []
+          for i=0,4 do clean_map_new = [clean_map_new, stx_imaspec_adapt_map(clean_map[i], vis, pixel)]
+        endif
+        if not keyword_set(no_fwdfit) then fwdfit_map_new = stx_imaspec_adapt_map(fwdfit_map, vis, pixel)
+        if keyword_set(no_mem_ge) then memge_map_new = stx_imaspec_adapt_map(memge_map, vis, pixel)
+        if keyword_set(no_clean) then clean_map_new = stx_imaspec_adapt_map(clean_map, vis, pixel)
+        if keyword_set(no_fwdfit) then fwdfit_map_new = stx_imaspec_adapt_map(fwdfit_map, vis, pixel)
+        
+        memge_map = memge_map_new
+        clean_map = clean_map_new
+        fwdfit_map = fwdfit_map_new
+      endif
+      
+    endif
     
     ;;;;; Store the data in a sav-file
     ; Check if the folder with the time range exists, othervise create it
