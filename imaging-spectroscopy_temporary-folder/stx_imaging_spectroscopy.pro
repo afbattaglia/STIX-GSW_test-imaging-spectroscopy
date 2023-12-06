@@ -857,12 +857,15 @@ pro stx_imaging_spectroscopy, path_sci_file, path_bkg_file, aux_fits_file, time_
 
     if keyword_set(stop_here) then stop
     
-    ;correct for regularized map structures (need to have 24 visibilities saved in the map structure)
+    ;correct for regularized maps the number of visibilities saved in the map strucutre
+    ;reason: the regularized inversion does not always converge such that low-energy visibilities get rejected
     if not keyword_set(observed_vis) then begin
-      det_label = ['10a','10b','10c','9a','9b','9c','8a','8b','8c','7a','7b','7c','6a','6b','6c','5a','5b','5c','4a','4b','4c','3a','3b','3c']
-      det_num = [3,20,22,16,14,32,21,26,4,24,8,28,15,27,31,6,30,2,25,5,23,7,29,1,12,19,17,11,13,18]
+      det_num = subc_index
+      det_label = stx_ind2label(det_num)
+      det_num = det_num + 1
       
-      if n_elements(vis) NE 24 then begin
+      num_vis = n_elements(det_label)
+      if n_elements(vis) NE num_vis then begin
         ;find the missing detectors
         missing_det = []
         missing_det_num = []
@@ -870,7 +873,7 @@ pro stx_imaging_spectroscopy, path_sci_file, path_bkg_file, aux_fits_file, time_
         for pos_vis=0,n_elements(vis)-1 do begin
           vis_label = [vis_label, vis[pos_vis].label]
         endfor
-        for this_label = 0,23 do begin
+        for this_label = 0,num_vis-1 do begin
           test_label = where(vis_label EQ det_label[this_label])
           if test_label EQ (-1) then missing_det = [missing_det, det_label[this_label]]
           if test_label EQ (-1) then missing_det_num = [missing_det_num, det_num[this_label]]
