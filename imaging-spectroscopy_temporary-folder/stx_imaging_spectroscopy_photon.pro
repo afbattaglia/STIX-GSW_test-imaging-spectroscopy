@@ -4,10 +4,10 @@
 ;   STIX
 ;
 ; NAME:
-;   stx_imaging_spectroscopy
+;   stx_imaging_spectroscopy_photon
 ;
 ; PURPOSE:
-;   Perform imaging spectroscopy with STIX. This procedures stores the results in a folder
+;   Perform imaging spectroscopy with STIX (photon space). This procedures stores the results in a folder
 ;   and creates a save file with the results of the forward fitting algorithm.
 ;   Idea of the procedure: if you do not know a priori the configuration of the
 ;   reconstructed image (in the considered energy range), then at each energy bin you have 
@@ -159,7 +159,7 @@
 ;
 ;-
 
-pro stx_imaging_spectroscopy, path_sci_file, path_bkg_file, aux_fits_file, time_range, energy_max_inversion,$     ; inputs
+pro stx_imaging_spectroscopy_photon, path_sci_file, path_bkg_file, aux_fits_file, time_range, energy_max_inversion,$     ; inputs
   ;; --- Optional inputs and keywords
   observed_vis = observed_vis, $
   energy_min_inversion = energy_min_inversion, $
