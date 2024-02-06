@@ -8,8 +8,8 @@
 ;
 ; PURPOSE:
 ;   Perform imaging spectroscopy with STIX. This procedures calls stx_imaging spectroscopy_photon
-;   of stx_imaging_spectroscopy_electron to produce the maps and files. Depending on the user, 
-;   the photon visibilities (observed or regularized) or the electron visibilities can be used. 
+;   or stx_imaging_spectroscopy_electron to produce the maps and files. Depending on the user, 
+;   the photon visibilities (observed or regularized) or the electron visibilities can be used.
 ;   By default:
 ;       - the regularized photon maps are created
 ;
@@ -137,10 +137,10 @@
 ;   no_fwdfit            : if set, it does not produce any FWDFIT maps
 ;
 ; HISTORY:
-;   July 2023, Battaglia A. F. (FHNW & ETHZ), initial release
+;   February 2024, Stiefel M. Z. (FHNW & ETHZ), initial release
 ;
 ; CONTACT:
-;   andrea.battaglia@fhnw.ch
+;   muriel.stiefel@fhnw.ch
 ;
 ;-
 
