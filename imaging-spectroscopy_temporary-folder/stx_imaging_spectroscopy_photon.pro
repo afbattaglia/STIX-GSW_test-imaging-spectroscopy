@@ -317,7 +317,7 @@ pro stx_imaging_spectroscopy_photon, path_sci_file, path_bkg_file, aux_fits_file
   
   ;;;;; Estimate flare location, if not already specified
   if not keyword_set(source_loc) then begin
-    stx_estimate_flare_location, path_sci_file, time_range_so, aux_data, flare_loc=flare_loc, path_bkg_file=path_bkg_file, energy_range = [energy_low[0], energy_high[0]];energy_range=energy_range
+    stx_estimate_flare_location, path_sci_file, time_range_so, aux_data, flare_loc=flare_loc, path_bkg_file=path_bkg_file, energy_range=energy_range
     xy_flare_stix = flare_loc
     mapcenter = flare_loc
   endif else begin
