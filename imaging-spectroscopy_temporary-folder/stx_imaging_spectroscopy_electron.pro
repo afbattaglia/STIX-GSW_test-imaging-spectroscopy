@@ -269,9 +269,9 @@ pro stx_imaging_spectroscopy_electron, path_sci_file, path_bkg_file, aux_fits_fi
     time_range_so = [t_st_so[ind_st_so], t_en_so[ind_en_so]]
     time_range_earth = time_range_so + time_shift
     tmp_time = anytim(time_range_earth[0],/ex,/trunc,/time_o)
-    this_time_start = num2str(tmp_time[0])+num2str(tmp_time[1])+num2str(tmp_time[2])
+    this_time_start = num2str(tmp_time[0],format='(I2.2)')+num2str(tmp_time[1],format='(I2.2)')+num2str(tmp_time[2],format='(I2.2)')
     tmp_time = anytim(time_range_earth[1],/ex,/trunc,/time_o)
-    this_time_end = num2str(tmp_time[0])+num2str(tmp_time[1])+num2str(tmp_time[2])
+    this_time_end = num2str(tmp_time[0],format='(I2.2)')+num2str(tmp_time[1],format='(I2.2)')+num2str(tmp_time[2],format='(I2.2)')
     text_ref_time = 'Earth-UT'
 
   endif else begin
@@ -286,9 +286,9 @@ pro stx_imaging_spectroscopy_electron, path_sci_file, path_bkg_file, aux_fits_fi
 
 
     tmp_time = anytim(time_range_so[0],/ex,/trunc,/time_o)
-    this_time_start = num2str(tmp_time[0])+num2str(tmp_time[1])+num2str(tmp_time[2])
+    this_time_start = num2str(tmp_time[0],format='(I2.2)')+num2str(tmp_time[1],format='(I2.2)')+num2str(tmp_time[2],format='(I2.2)')
     tmp_time = anytim(time_range_so[1],/ex,/trunc,/time_o)
-    this_time_end = num2str(tmp_time[0])+num2str(tmp_time[1])+num2str(tmp_time[2])
+    this_time_end = num2str(tmp_time[0],format='(I2.2)')+num2str(tmp_time[1],format='(I2.2)')+num2str(tmp_time[2],format='(I2.2)')
     text_ref_time = 'SolarOrbiter-UT'
 
   endelse
@@ -805,6 +805,18 @@ pro stx_imaging_spectroscopy_electron, path_sci_file, path_bkg_file, aux_fits_fi
     write_png,filename_final_folder+filename_png,tvrd(/true)
 
     !p.multi=0
+
+    
+    ;;;;; store the FITS files
+    path_fits_folder = filename_final_folder+folder_delimiter+'FITS'
+    if not file_test(path_fits_folder,/dir) then file_mkdir, path_fits_folder
+    ;map,file,path_sci_file,path_bkg_file=path_bkg_file
+    standard_text = 'stix-imaging-spectroscopy_'+text_erange_sav+'-keV_'+this_date+'_'+this_time_start+'-'+this_time_end+'_'+text_ref_time+'.fits'
+    stx_map2fits,fwdfit_map,path_fits_folder+folder_delimiter+'FWDFIT_'+standard_text,path_sci_file,path_bkg_file=path_bkg_file
+    if not keyword_set(no_mem_ge) then stx_map2fits,memge_map,path_fits_folder+folder_delimiter+'MEM_GE_'+standard_text,path_sci_file,path_bkg_file=path_bkg_file
+    if not keyword_set(no_clean) then stx_map2fits,clean_map,path_fits_folder+folder_delimiter+'CLEAN_'+standard_text,path_sci_file,path_bkg_file=path_bkg_file
+
+
 
     path_new_folder = filename_final_folder
 
