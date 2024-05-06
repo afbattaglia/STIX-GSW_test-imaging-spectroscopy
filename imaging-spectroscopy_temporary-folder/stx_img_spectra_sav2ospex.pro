@@ -25,7 +25,7 @@
 ;    30-Aug-2023 - ECMD (Graz), initial release
 ;
 ;-
-pro stx_img_spectra_sav2ospex, folder, algo
+pro stx_img_spectra_sav2ospex, folder, algo, ospex_obj=ospex_obj
 
   default, algo, 'clean'
 
