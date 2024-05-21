@@ -42,6 +42,8 @@
 ;                          visibilities. If the keyword "/observed_vis" is set, then this is ignored.
 ;                          Default is 9 keV (we cannot go lower with the regularized visibilities).
 ;
+;   mapcenter            : array with x,y coordinates for the mapcenter (if known)
+;
 ;   configuration_fwdfit : array containing the configuration of the forward fitting algorithm
 ;
 ;   source_loc           : array containing the location of the source (if known a priori).
@@ -150,6 +152,7 @@ pro stx_imaging_spectroscopy, path_sci_file, path_bkg_file, aux_fits_file, time_
   observed_vis = observed_vis, $
   energy_min_inversion = energy_min_inversion, $
   configuration_fwdfit = configuration_fwdfit, $
+  mapcenter = mapcenter, $
   source_loc = source_loc, $
   source_fwhm = source_fwhm, $
   min_fwhm = min_fwhm, $
@@ -195,6 +198,7 @@ pro stx_imaging_spectroscopy, path_sci_file, path_bkg_file, aux_fits_file, time_
       ;; --- Optional inputs and keywords
       energy_min_inversion = energy_min_inversion, $
       configuration_fwdfit = configuration_fwdfit, $
+      mapcenter = mapcenter, $
       source_loc = source_loc, $
       source_fwhm = source_fwhm, $
       min_fwhm = min_fwhm, $
@@ -236,6 +240,7 @@ pro stx_imaging_spectroscopy, path_sci_file, path_bkg_file, aux_fits_file, time_
       observed_vis = observed_vis, $
       energy_min_inversion = energy_min_inversion, $
       configuration_fwdfit = configuration_fwdfit, $
+      mapcenter = mapcenter, $
       source_loc = source_loc, $
       source_fwhm = source_fwhm, $
       min_fwhm = min_fwhm, $

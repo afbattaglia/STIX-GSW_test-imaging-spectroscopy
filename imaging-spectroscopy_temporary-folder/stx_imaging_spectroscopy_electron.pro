@@ -56,6 +56,8 @@
 ;
 ;   configuration_fwdfit : array containing the configuration of the forward fitting algorithm
 ;
+;   mapcenter            : array with x,y coordinates for the mapcenter (if known)
+;
 ;   source_loc           : array containing the location of the source (if known a priori).
 ;                          This has to have the same number of elements as configuration_fwdfit.
 ;                          This keyword is mutually exclusive with /select_location.
@@ -162,6 +164,7 @@ pro stx_imaging_spectroscopy_electron, path_sci_file, path_bkg_file, aux_fits_fi
   ;; --- Optional inputs and keywords
   energy_min_inversion = energy_min_inversion, $
   configuration_fwdfit = configuration_fwdfit, $
+  mapcenter = mapcenter, $
   source_loc = source_loc, $
   source_fwhm = source_fwhm, $
   min_fwhm = min_fwhm, $
@@ -298,14 +301,11 @@ pro stx_imaging_spectroscopy_electron, path_sci_file, path_bkg_file, aux_fits_fi
   aux_data = stx_create_auxiliary_data(aux_fits_file, time_range_so)
 
   ;;;;; Estimate flare location, if not already specified
-  if not keyword_set(source_loc) then begin
+  if not keyword_set(mapcenter) then begin
     stx_estimate_flare_location, path_sci_file, time_range_so, aux_data, flare_loc=flare_loc, path_bkg_file=path_bkg_file
     xy_flare_stix = flare_loc
     mapcenter = flare_loc
-  endif else begin
-    xy_flare_stix = source_loc[*,0]
-    mapcenter = xy_flare_stix
-  endelse
+  endif
 
   ;;;;; Coordinate transformaion
   ; from Helioprojective Cartesian to STIX coordinate frame
