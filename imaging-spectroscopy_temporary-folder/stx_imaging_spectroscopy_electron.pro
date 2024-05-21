@@ -305,7 +305,10 @@ pro stx_imaging_spectroscopy_electron, path_sci_file, path_bkg_file, aux_fits_fi
     stx_estimate_flare_location, path_sci_file, time_range_so, aux_data, flare_loc=flare_loc, path_bkg_file=path_bkg_file
     xy_flare_stix = flare_loc
     mapcenter = flare_loc
-  endif
+  endif else begin
+    xy_flare_stix = mapcenter
+    mapcenter = mapcenter
+  endelse
 
   ;;;;; Coordinate transformaion
   ; from Helioprojective Cartesian to STIX coordinate frame
