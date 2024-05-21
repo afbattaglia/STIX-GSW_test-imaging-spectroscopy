@@ -319,10 +319,14 @@ pro stx_imaging_spectroscopy_photon, path_sci_file, path_bkg_file, aux_fits_file
   
   
   ;;;;; Estimate flare location, if not already specified
-  if not keyword_set(mapcenter) then begin
+  if not keyword_set(mapcenter) and not keyword_set(source_loc) then begin
     stx_estimate_flare_location, path_sci_file, time_range_so, aux_data, flare_loc=flare_loc, path_bkg_file=path_bkg_file, energy_range=energy_range
     xy_flare_stix = flare_loc
     mapcenter = flare_loc
+  endif else if not keyword_set(mapcenter) and keyword_set(source_loc) then begin
+    n_sources_here = n_elements(source_loc)/2
+    xy_flare_stix = total(source_loc,2)/n_sources_here
+    mapcenter = xy_flare_stix
   endif else begin
     xy_flare_stix = mapcenter
     mapcenter = mapcenter
