@@ -190,6 +190,9 @@ pro stx_imaging_spectroscopy, path_sci_file, path_bkg_file, aux_fits_file, time_
     print,'Keyword electron_maps and observed_vis can not be used at the same time'
     message,'---> Please, review your keywords!'
   endif
+  if not keyword_set(configuration_fwdfit) and keyword_set(source_loc) then begin
+    message,'---> Please use the keyword configuration_fwdfit as well when using source_loc'
+  endif
   
   if keyword_set(electron_maps) then begin
     ;Create the electron maps
