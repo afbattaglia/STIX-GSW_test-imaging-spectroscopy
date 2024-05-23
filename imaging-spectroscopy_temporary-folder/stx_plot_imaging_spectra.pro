@@ -44,7 +44,7 @@
 ;
 ;-
 
-pro stx_plot_imaging_spectra, path_data_folder, path_sci_file, path_bkg_file, $    ; inputs
+pro stx_plot_imaging_spectra, path_data_folder, path_sci_file, path_bkg_file, aux_fits_file, $    ; inputs
   ;; --- Optional inputs and keywords
   color_srcs = color_srcs, $      
   observed_color = observed_color, $
@@ -290,9 +290,10 @@ pro stx_plot_imaging_spectra, path_data_folder, path_sci_file, path_bkg_file, $ 
   stx_convert_pixel_data, $
     fits_path_data = path_sci_file,$
     fits_path_bk = path_bkg_file, $
+    aux_fits_file = aux_fits_file, $
     distance = distance, $
     time_shift = time_shift, $
-    flare_location = xy_flare_stix, $
+    flare_location_hpc = all_fwdfit_pos[*,0], $
     ospex_obj = ospex_obj, $
     background_data = background_data;, $
     ;/sav_srm ; --> this keyword is not officially implemented!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
