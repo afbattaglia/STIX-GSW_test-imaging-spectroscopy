@@ -57,6 +57,9 @@ uncertainty = 1
 ;; undo the configuration_fwdfit keyword
 ;configuration_fwdfit = ['circle','circle']
 
+;;; If the mapcenter is known or should be defined, use the keyword mapcenter
+; mapcenter = [x-coordinate, y-coordinate]
+
 ;;;;; If you want to set the location of the boxes
 ;   box_location         : instead of selecting the boxes on the screen, one can pass it and then it will
 ;                          be used for all the energy bins. One has to give the coordinates of the bottom left
@@ -85,6 +88,7 @@ stx_imaging_spectroscopy, $
   time_range, $
   energy_max_inversion, $
   ;; --- Optional inputs and keywords
+  ; mapcenter = mapcenter
   ;/select_loc, $
   ;/observed_vis, $
   path_sav_folder = path_sav_folder, $
