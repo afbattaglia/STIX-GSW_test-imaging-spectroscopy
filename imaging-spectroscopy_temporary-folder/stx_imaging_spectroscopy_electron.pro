@@ -596,7 +596,7 @@ pro stx_imaging_spectroscopy_electron, path_sci_file, path_bkg_file, aux_fits_fi
 
 
       ;;;;; Initialize the structure needed by fwdfit
-      srcin = VIS_FWDFIT_PSO_MULTIPLE_SRC_CREATE(vis, this_configuration_fwdfit)
+      srcin = VIS_FWDFIT_PSO_MULTIPLE_SRC_CREATE(vis, this_configuration_fwdfit, mapcenter)
 
 
       ;;;;; If the source location has been fixed or selected, then fix it

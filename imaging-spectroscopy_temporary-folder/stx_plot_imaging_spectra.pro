@@ -71,6 +71,11 @@ pro stx_plot_imaging_spectra, path_data_folder, path_sci_file, path_bkg_file, au
   
   ;;;;; Find the total number of sources in the series
   all_path_sav_stix = findfile(path_data_folder+'stix-imaging*.sav')
+;  all_path_sav_stix = ['/home/afbattaglia/ownCloud - Andrea Battaglia (fhnw.ch)@drive.switch.ch/Work/Observations/Events-by-date/2024-03-19_2320_test-imaging-spectroscopy/SO-STIX_data/imspec/2024-03-19_231940-232040_SolarOrbiter-UT_demo_test-new-software/stix-imaging-spectroscopy_015-016-keV_2024-03-19_231940-232040_SolarOrbiter-UT.sav',$
+;    '/home/afbattaglia/ownCloud - Andrea Battaglia (fhnw.ch)@drive.switch.ch/Work/Observations/Events-by-date/2024-03-19_2320_test-imaging-spectroscopy/SO-STIX_data/imspec/2024-03-19_231940-232040_SolarOrbiter-UT_demo_test-new-software/stix-imaging-spectroscopy_016-018-keV_2024-03-19_231940-232040_SolarOrbiter-UT.sav',$
+;    '/home/afbattaglia/ownCloud - Andrea Battaglia (fhnw.ch)@drive.switch.ch/Work/Observations/Events-by-date/2024-03-19_2320_test-imaging-spectroscopy/SO-STIX_data/imspec/2024-03-19_231940-232040_SolarOrbiter-UT_demo_test-new-software/stix-imaging-spectroscopy_018-020-keV_2024-03-19_231940-232040_SolarOrbiter-UT.sav',$
+;    '/home/afbattaglia/ownCloud - Andrea Battaglia (fhnw.ch)@drive.switch.ch/Work/Observations/Events-by-date/2024-03-19_2320_test-imaging-spectroscopy/SO-STIX_data/imspec/2024-03-19_231940-232040_SolarOrbiter-UT_demo_test-new-software/stix-imaging-spectroscopy_020-022-keV_2024-03-19_231940-232040_SolarOrbiter-UT.sav',$
+;    '/home/afbattaglia/ownCloud - Andrea Battaglia (fhnw.ch)@drive.switch.ch/Work/Observations/Events-by-date/2024-03-19_2320_test-imaging-spectroscopy/SO-STIX_data/imspec/2024-03-19_231940-232040_SolarOrbiter-UT_demo_test-new-software/stix-imaging-spectroscopy_022-025-keV_2024-03-19_231940-232040_SolarOrbiter-UT.sav']
   array_nsources = []
   n_ebins = n_elements(all_path_sav_stix)
   for this_f=0,n_ebins-1 do begin
@@ -366,9 +371,9 @@ pro stx_plot_imaging_spectra, path_data_folder, path_sci_file, path_bkg_file, au
     
     e_min_ospex_axis = [e_min_ospex_axis, ter[0]]
     e_max_ospex_axis = [e_max_ospex_axis, ter[1]]
-    observed_spectrum = [observed_spectrum, mean(tmp_observed_spectrum[ile:ihe])]
+    observed_spectrum = [observed_spectrum, mean(tmp_observed_spectrum[ile:ihe])*3.5]
     ;observed_spectrum_error = [observed_spectrum_error, sqrt(total(tmp_observed_spectrum_error[ile:ihe]^2))]
-    observed_spectrum_error = [observed_spectrum_error, mean(tmp_observed_spectrum_error[ile:ihe])]
+    observed_spectrum_error = [observed_spectrum_error, mean(tmp_observed_spectrum_error[ile:ihe])*3.5]
     observed_bk_spectrum = [observed_bk_spectrum, mean(tmp_observed_bk[ile:ihe])]
     observed_bk_spectrum_error = [observed_bk_spectrum_error, mean(tmp_observed_bk_error[ile:ihe])]
   end
@@ -460,7 +465,7 @@ pro stx_plot_imaging_spectra, path_data_folder, path_sci_file, path_bkg_file, au
   errplot,e_axis_fwdfit,(total_flux_fwdfit-total_flux_fwdfit_err)>1.d-15,total_flux_fwdfit+total_flux_fwdfit_err,$
     thick=2,color=cgcolor('slate gray'),CLIP=10.^[!x.crange[0],!y.crange[0],!x.crange[1],!y.crange[1]],NOCLIP=0,width=0
     
-  text_legend = ['Observed flare spectrum', 'Observed bk spectrum', 'Total FWDFIT spectrum']
+  text_legend = ['Observed flare spectrum x 3.5', 'Observed bk spectrum', 'Total FWDFIT spectrum']
   color_legend = [cgcolor('black'), cgcolor('black'), cgcolor('slate gray')]
   chars_legend = [ch_sz, ch_sz, ch_sz]
   linest_legend = [0, 1, 0]
